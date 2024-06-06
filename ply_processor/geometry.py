@@ -52,7 +52,7 @@ def rotation_xyz(pointcloud, theta_x, theta_y, theta_z):
 
 
 def point_line_distance(
-    point: NDArray[np.float32],
+    points: NDArray[np.float32],
     line_point: NDArray[np.float32],
     line_vector: NDArray[np.float32],
 ) -> float:
@@ -65,6 +65,7 @@ def point_line_distance(
     Returns:
         float: _description_
     """
-    u = point - line_point
-    v = line_vector
-    return abs(np.cross(u, v) / np.linalg.norm(u))
+    u = points - line_point
+    v = normalize(line_vector)
+    vt = np.inner(u, v).reshape(-1, 1).dot(v)
+    return np.linalg.norm(u - vt, axis=1)
