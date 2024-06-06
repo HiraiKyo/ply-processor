@@ -1,0 +1,27 @@
+[tool.taskipy.tasks]
+test = {cmd = "pytest", help = "Run tests"}
+
+[tool.poetry]
+authors = ["HiraiKyo <kyo.mikhael@gmail.com>"]
+description = ""
+name = "ply-processor"
+readme = "README.md"
+version = "0.1.0"
+
+[tool.poetry.dependencies]
+open3d = "^0.18.0"
+pydantic = "^2.7.3"
+python = "^3.11"
+result = "^0.17.0"
+
+[tool.poetry.group.dev.dependencies]
+black = "^24.4.2"
+flake8 = "^7.0.0"
+isort = "^5.13.2"
+mypy = "^1.10.0"
+pytest = "^8.2.2"
+taskipy = "^1.12.2"
+
+[build-system]
+build-backend = "poetry.core.masonry.api"
+requires = ["poetry-core"]
