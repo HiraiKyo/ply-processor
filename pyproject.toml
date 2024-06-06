@@ -1,4 +1,5 @@
 [tool.taskipy.tasks]
+main = {cmd = "python ply_processor/main.py", help = "Run main"}
 test = {cmd = "pytest", help = "Run tests"}
 
 [tool.poetry]
@@ -9,16 +10,24 @@ readme = "README.md"
 version = "0.1.0"
 
 [tool.poetry.dependencies]
+addict = "^2.4.0"
+matplotlib = "^3.9.0"
 open3d = "^0.18.0"
+pandas = "^2.2.2"
 pydantic = "^2.7.3"
+pyransac3d = "^0.6.0"
 python = "^3.11"
+pyyaml = "^6.0.1"
 result = "^0.17.0"
+scikit-learn = "^1.5.0"
+scipy = "^1.13.1"
+tqdm = "^4.66.4"
+cylinder-fitting = "^1.1.4"
 
 [tool.poetry.group.dev.dependencies]
 black = "^24.4.2"
 flake8 = "^7.0.0"
 isort = "^5.13.2"
-mypy = "^1.10.0"
 pytest = "^8.2.2"
 taskipy = "^1.12.2"
 
