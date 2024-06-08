@@ -47,16 +47,13 @@ def detect_cylinder(
 
     # PCDに色付け
     # 推定した円筒モデル近傍の点を抽出
-    inliers = np.where(
-        abs(point_line_distance(points, C_fit, w_fit) - r_fit) < Config.INLIER_THRESHOLD
-    )
+    # インデックスを取得したい
+    distances = abs(point_line_distance(points, C_fit, w_fit) - r_fit)
+    inliers = np.where(distances < Config.INLIER_THRESHOLD)[0]
     inliers_cloud = pcd.select_by_index(inliers)
     inliers_cloud.paint_uniform_color([0, 1.0, 0])
 
-    outliers = np.where(
-        abs(point_line_distance(points, C_fit, w_fit) - r_fit)
-        >= Config.INLIER_THRESHOLD
-    )
+    outliers = np.where(distances >= Config.INLIER_THRESHOLD)[0]
     outliers_cloud = pcd.select_by_index(outliers)
 
     # 可視化

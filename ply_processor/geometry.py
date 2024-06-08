@@ -67,5 +67,5 @@ def point_line_distance(
     """
     u = points - line_point
     v = normalize(line_vector)
-    vt = np.inner(u, v).reshape(-1, 1).dot(v)
+    vt = np.inner(u, v).reshape(-1, 1).dot(v.reshape(-1, 3))
     return np.linalg.norm(u - vt, axis=1)

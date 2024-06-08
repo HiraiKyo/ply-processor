@@ -38,9 +38,11 @@ def main():
         print("Processing loop:", i)
 
         # フィッティング
-        plane_inliers, plane_outliers, plane_model = detect_plane(pcd).ok_value
-        cylinder_inliers, cylinder_outliers, cylinder_model = detect_cylinder(
-            plane_outliers, plane_model=plane_model
+        plane_inlier_cloud, plane_outlier_cloud, plane_model = detect_plane(
+            pcd
+        ).ok_value
+        cylinder_inlier_cloud, cylinder_outlier_cloud, cylinder_model = detect_cylinder(
+            plane_outlier_cloud, plane_model=plane_model
         ).ok_value
 
         # dataframeに格納
@@ -49,7 +51,11 @@ def main():
 
         print("Visualizing...")
         filename = f"{dir_name}/{i}.png"
-        capture_snapshot(vis, filename, [plane_inliers, cylinder_inliers])
+        capture_snapshot(
+            vis,
+            filename,
+            [plane_inlier_cloud, cylinder_inlier_cloud, cylinder_outlier_cloud],
+        )
 
         i += 1
 

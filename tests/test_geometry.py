@@ -14,7 +14,7 @@ def test_point_line_distance():
 
 
 def test_point_line_distance_2():
-    point = np.array([[1, 1, 1], [2, 1, 1]])
+    point = np.array([[1, 1, 1], [1, 2, 2]])
     line_point = np.array([0, 0, 0])
     line_vector = np.array([1, 0, 0])
     distances = point_line_distance(point, line_point, line_vector)
