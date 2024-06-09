@@ -4,14 +4,19 @@ from ply_processor.cylinder.leastsq import detect_cylinder
 import pandas as pd
 import time
 import os
-from ply_processor.snapshot import capture_snapshot
+from ply_processor.snapshot import (
+    capture_snapshot,
+    view_point_cloud,
+    create_mesh_cylinder,
+)
 from ply_processor.config import Config
+import numpy as np
 
 pcd = o3d.io.read_point_cloud(Config.FILEPATH)
 
 # データフレーム作成
 # 平面の方程式
-plane = pd.DataFrame(None, columns=["a", "b", "c", "d"])
+plane = pd.DataFrame(None, columns=["a", "b", "c", "d", "calc_time"])
 # 円柱データ
 cylinder = pd.DataFrame(
     None,
@@ -23,6 +28,7 @@ cylinder = pd.DataFrame(
         "axis_y",
         "axis_z",
         "radius",
+        "calc_time",
     ],
 )
 
@@ -33,10 +39,12 @@ os.mkdir(dir_name)
 
 def main():
     vis = o3d.visualization.Visualizer()
-    vis.create_window()
+    vis.create_window(visible=False)
     for i in range(Config.LOOP):
         print("Processing loop:", i)
 
+        # 実行時間を計測
+        start = time.perf_counter()
         # フィッティング
         plane_inlier_cloud, plane_outlier_cloud, plane_model = detect_plane(
             pcd
@@ -45,18 +53,35 @@ def main():
             plane_outlier_cloud, plane_model=plane_model
         ).ok_value
 
+        end = time.perf_counter()
+        elapsed = "{:.1f}".format(end - start)
+
         # dataframeに格納
-        plane.loc[i] = plane_model
-        cylinder.loc[i] = cylinder_model
+        plane.loc[i] = np.append(plane_model, elapsed)
+        cylinder.loc[i] = np.append(cylinder_model, elapsed)
 
         print("Visualizing...")
         filename = f"{dir_name}/{i}.png"
+        cylinder_mesh = create_mesh_cylinder(cylinder_model)
         capture_snapshot(
             vis,
             filename,
-            [plane_inlier_cloud, cylinder_inlier_cloud, cylinder_outlier_cloud],
+            [
+                plane_inlier_cloud,
+                cylinder_inlier_cloud,
+                cylinder_outlier_cloud,
+                cylinder_mesh,
+            ],
         )
-
+        # 円筒軸と半径からメッシュを作成
+        view_point_cloud(
+            [
+                plane_inlier_cloud,
+                cylinder_inlier_cloud,
+                cylinder_outlier_cloud,
+                cylinder_mesh,
+            ]
+        )
         i += 1
 
     vis.destroy_window()

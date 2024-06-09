@@ -69,3 +69,29 @@ def point_line_distance(
     v = normalize(line_vector)
     vt = np.inner(u, v).reshape(-1, 1).dot(v.reshape(-1, 3))
     return np.linalg.norm(u - vt, axis=1)
+
+
+def get_rotation_matrix_from_vectors(vec1, vec2):
+    """_summary_
+
+    Args:
+        vec1: _description_
+        vec2: _description_
+
+    Returns:
+        _description_
+    """
+    a = normalize(vec1)
+    b = normalize(vec2)
+    v = np.cross(a, b)
+    c = np.dot(a, b)
+    s = np.linalg.norm(v)
+    kmat = np.array(
+        [
+            [0, -v[2], v[1]],
+            [v[2], 0, -v[0]],
+            [-v[1], v[0], 0],
+        ]
+    )
+    rotation_matrix = np.eye(3) + kmat + kmat.dot(kmat) * ((1 - c) / (s**2))
+    return rotation_matrix
