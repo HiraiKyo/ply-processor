@@ -55,14 +55,16 @@ def view_point_cloud(pcds: list):
     return Ok(None)
 
 
-def create_mesh_cylinder(cylinder_model: NDArray[np.float32]):
+def create_mesh_cylinder(
+    cylinder_model: NDArray[np.float32], center: NDArray[np.float32]
+):
     """_summary_
 
     Args:
-        cylinder_model (NDArray[np.float32]): _description_
+        cylinder_model (NDArray[np.float32]): array(x0, y0, z0, a, b, c, radius)
 
     Returns:
-        None: _description_
+        open3d.geometry.TriangleMesh
     """
     # 円筒メッシュの作成
     cylinder_mesh = o3d.geometry.TriangleMesh.create_cylinder(
@@ -88,3 +90,40 @@ def create_mesh_cylinder(cylinder_model: NDArray[np.float32]):
     cylinder_mesh.transform(transformation_matrix)
 
     return cylinder_mesh
+
+
+def create_mesh_plane(plane_model: NDArray[np.float32], center: NDArray[np.float32]):
+    """_summary_
+
+    Args:
+        plane_model (NDArray[np.float32]): array(a, b, c, d)
+
+    Returns:
+        open3d.geometry.TriangleMesh
+    """
+    # 平面メッシュの作成
+    plane_mesh = o3d.geometry.TriangleMesh.create_box(
+        width=50.0, height=50.0, depth=0.1
+    )
+
+    # 平面の方程式から法線ベクトルを取得
+    normal = plane_model[:3]
+
+    # 平面上の1点を取得
+    x0 = center[0]
+    y0 = center[1]
+    z0 = -(plane_model[3] + x0 * plane_model[0] + y0 * plane_model[1]) / plane_model[2]
+    p0 = np.array([x0, y0, z0])
+
+    # 変換行列を作成
+    transformation_matrix = np.eye(4)
+    # 回転
+    v0 = np.array([0.0, 0.0, 1.0])
+    transformation_matrix[:3, :3] = get_rotation_matrix_from_vectors(v0, normal)
+    # 平行移動
+    transformation_matrix[:3, 3] = p0
+
+    # 変換
+    plane_mesh.transform(transformation_matrix)
+
+    return plane_mesh

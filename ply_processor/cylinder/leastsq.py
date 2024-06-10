@@ -32,8 +32,19 @@ def detect_cylinder(
 
     # 前処理
     points = np.asarray(pcd.points)
+    guess_angles = None
 
-    w_fit, C_fit, r_fit, fit_err = fit(points)
+    # 初期軸の設定
+    if kwargs["plane_model"]:
+        plane_model = kwargs["plane_model"]
+        normal = plane_model[:3]
+        r = np.linalg.norm(normal)
+        # 法線ベクトルを極座標変換
+        theta = np.arccos(normal[2] / r)
+        phi = np.arctan2(normal[1], normal[0])
+        guess_angles = [(theta, phi)]
+
+    w_fit, C_fit, r_fit, fit_err = fit(points, guess_angles=guess_angles)
 
     cylinder_model = np.concatenate([C_fit, w_fit, np.array([r_fit])])
 

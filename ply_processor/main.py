@@ -1,6 +1,6 @@
 import open3d as o3d
 from ply_processor.plane.ransac import detect_plane
-from ply_processor.cylinder.leastsq import detect_cylinder
+from ply_processor.cylinder.ransac import detect_cylinder
 import pandas as pd
 import time
 import os
@@ -8,11 +8,10 @@ from ply_processor.snapshot import (
     capture_snapshot,
     view_point_cloud,
     create_mesh_cylinder,
+    create_mesh_plane,
 )
 from ply_processor.config import Config
 import numpy as np
-
-pcd = o3d.io.read_point_cloud(Config.FILEPATH)
 
 # データフレーム作成
 # 平面の方程式
@@ -38,6 +37,12 @@ os.mkdir(dir_name)
 
 
 def main():
+    pcd = o3d.io.read_point_cloud(Config.FILEPATH)
+
+    # devモードでは点群生データを表示
+    if Config.MODE == "dev":
+        view_point_cloud([pcd])
+
     vis = o3d.visualization.Visualizer()
     vis.create_window(visible=False)
     for i in range(Config.LOOP):
@@ -62,7 +67,7 @@ def main():
 
         print("Visualizing...")
         filename = f"{dir_name}/{i}.png"
-        cylinder_mesh = create_mesh_cylinder(cylinder_model)
+
         capture_snapshot(
             vis,
             filename,
@@ -70,18 +75,23 @@ def main():
                 plane_inlier_cloud,
                 cylinder_inlier_cloud,
                 cylinder_outlier_cloud,
-                cylinder_mesh,
             ],
         )
         # 円筒軸と半径からメッシュを作成
-        view_point_cloud(
-            [
-                plane_inlier_cloud,
-                cylinder_inlier_cloud,
-                cylinder_outlier_cloud,
-                cylinder_mesh,
-            ]
-        )
+        if Config.MODE == "dev":
+            plane_mesh = create_mesh_plane(plane_model, plane_inlier_cloud.get_center())
+            cylinder_mesh = create_mesh_cylinder(
+                cylinder_model, cylinder_inlier_cloud.get_center()
+            )
+            view_point_cloud(
+                [
+                    plane_inlier_cloud,
+                    cylinder_inlier_cloud,
+                    cylinder_outlier_cloud,
+                    plane_mesh,
+                    cylinder_mesh,
+                ]
+            )
         i += 1
 
     vis.destroy_window()
