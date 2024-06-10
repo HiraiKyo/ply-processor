@@ -1,6 +1,6 @@
 import open3d as o3d
 from ply_processor.plane.ransac import detect_plane
-from ply_processor.cylinder.ransac import detect_cylinder
+from ply_processor.cylinder.fixed_axis import detect_cylinder
 import pandas as pd
 import time
 import os
