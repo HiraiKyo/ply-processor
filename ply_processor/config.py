@@ -4,7 +4,4 @@ class Config(dict):
     FILEPATH = "data/stained/segmented_2.ply"
     INLIER_THRESHOLD = 0.1
     MODE = "dev"
-    MODEL = {
-        "h": 50.0,
-        "r": 35.0
-    }
+    MODEL = {"h_bottom": 7.0, "h_top": 30.0, "r": 35.0 / 2}
