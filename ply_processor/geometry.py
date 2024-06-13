@@ -88,7 +88,7 @@ def get_rotation_matrix_from_vectors(vec1, vec2):
     cross = np.cross(a, b)
     dot = np.dot(a, b)
     angle = np.arccos(dot)
-    rotvec = cross * angle
+    rotvec = normalize(cross) * angle
 
     # 回転行列を導出
     rotation_matrix = Rotation.from_rotvec(rotvec).as_matrix()

@@ -41,10 +41,10 @@ def capture_snapshot(
     return Ok(None)
 
 
-def view_point_cloud(pcds: list):
+def view_point_cloud(pcds: list, window_name: str = "Open3D"):
     o3d.visualization.draw_geometries(
         pcds,
-        window_name="Open3D",
+        window_name,
         width=800,
         height=600,
         left=50,

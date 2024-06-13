@@ -6,7 +6,7 @@ from ply_processor.config import Config
 from ply_processor.geometry import get_rotation_matrix_from_vectors, point_line_distance
 from scipy.optimize import minimize
 
-from ply_processor.snapshot import create_mesh_line
+from ply_processor.snapshot import create_mesh_line, view_point_cloud
 
 
 def detect_cylinder(
@@ -56,33 +56,33 @@ def detect_cylinder(
 
 
 def fit_fixed_axis(points_raw, axis):
-
     # Raw points
     coordinate_frame = o3d.geometry.TriangleMesh.create_coordinate_frame(size=10)
     pcd = o3d.geometry.PointCloud()
     pcd.points = o3d.utility.Vector3dVector(points_raw)
-    o3d.visualization.draw_geometries(
-        [pcd, coordinate_frame], window_name="座標系変換前"
-    )
+    view_point_cloud([pcd, coordinate_frame], "座標系変換前")
 
     # 重心を原点、Z軸を平面の法線ベクトルとする座標系に変換
-    mean = np.mean(points_raw, axis=0)
     transformation_matrix = np.eye(4)
-    transformation_matrix[:3, 3] = mean
+    mean = np.mean(points_raw, axis=0)
+    points = points_raw - mean
+    line_set = create_mesh_line(
+        np.concatenate([np.array([0, 0, 0]), np.array(axis) * 100])
+    )
+    pcd.points = o3d.utility.Vector3dVector(points)
+    view_point_cloud([pcd, coordinate_frame, line_set], "平行移動後")
     transformation_matrix[:3, :3] = get_rotation_matrix_from_vectors(
         np.array([0, 0, 1]), axis
     )
     transformation_matrix_inv = np.linalg.inv(transformation_matrix)
     print(transformation_matrix)
     # アフィン変換のために4x1に変換
-    points = np.concatenate([points_raw, np.ones((points_raw.shape[0], 1))], axis=1)
+    points = np.concatenate([points, np.ones((points.shape[0], 1))], axis=1)
     points = np.dot(transformation_matrix, points.T).T
 
     # 可視化
     pcd.points = o3d.utility.Vector3dVector(points[:, :3])
-    o3d.visualization.draw_geometries(
-        [pcd, coordinate_frame], window_name="座標系変換後"
-    )
+    view_point_cloud([pcd, coordinate_frame], "座標系変換後")
 
     # 初期値
     c_fit = np.array([0, 0, 0, 0])
@@ -117,13 +117,12 @@ def fit_fixed_axis(points_raw, axis):
     # 逆変換前に中心軸描画
     print(f"Guess before converted: {c_fit[:3]}, {w_fit[:3]}, {r_fit}")
     line_set = create_mesh_line(np.concatenate([c_fit[:3], w_fit[:3] * 100]))
-    o3d.visualization.draw_geometries(
-        [pcd, line_set, coordinate_frame], window_name="逆変換前、中心軸描画"
-    )
+    view_point_cloud([pcd, line_set, coordinate_frame], "逆変換前、中心軸描画")
 
     # もとの座標系に戻す
     c_fit = np.dot(transformation_matrix_inv, c_fit.T).T
     w_fit = np.dot(transformation_matrix_inv, w_fit.T).T
+    c_fit += mean
     return w_fit[:3], c_fit[:3], r_fit, fit_err
 
 
