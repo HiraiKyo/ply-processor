@@ -59,15 +59,15 @@ def fit_fixed_axis(points_raw, axis):
     transformation_matrix = np.eye(4)
     transformation_matrix[:3, 3] = mean
     transformation_matrix[:3, :3] = get_rotation_matrix_from_vectors(
-        np.array([0, 0, 0]), axis
+        np.array([0, 0, 1]), axis
     )
     # アフィン変換のために4x1に変換
     points = np.concatenate([points_raw, np.ones((points_raw.shape[0], 1))], axis=1)
-    points = np.dot(points, transformation_matrix)
+    points = np.dot(transformation_matrix, points.T).T
 
     # 初期値
-    c_fit = np.array([0, 0, 0])
-    w_fit = np.array([0, 0, 1])
+    c_fit = np.array([0, 0, 0, 0])
+    w_fit = np.array([0, 0, 1, 0])
     r_fit = Config.MODEL["r"]
     fit_err = 0
 
@@ -75,7 +75,8 @@ def fit_fixed_axis(points_raw, axis):
     z = points[:, 2]
     points_intp = np.where(z > Config.MODEL["h_bottom"])[0]
     points_intp_inv = np.where(z < -Config.MODEL["h_bottom"])[0]
-    print(len(points_intp), len(points_intp_inv))
+    if len(points_intp) < len(points_intp_inv):
+        points_intp = points_intp_inv
     centers = []
     # 任意3点を選び、3点を通る円の方程式を求める
     for i in range(Config.MAX_ITERATION):
@@ -86,18 +87,21 @@ def fit_fixed_axis(points_raw, axis):
         a, b, r = find_circle(p0, p1, p2)
         # 円半径が設定値プラマイ1以内の結果を収集する
         if r < Config.MODEL["r"] + 1 and r > Config.MODEL["r"] - 1:
-            centers.append([a, b, 0])  # z=0
+            centers.append([a, b, 0, 0])  # z=0
 
+    # 3点を通る円の中心のうち、設定値近傍の数を出力
+    print(f"Number of circles: {len(centers)}, Iterations: {Config.MAX_ITERATION}")
     # 3点を通る円の中心の平均を求める
     c_fit = np.mean(centers, axis=0)
 
     # もとの座標系に戻す
-    c_fit = np.dot(transformation_matrix.T, c_fit)
-    w_fit = np.dot(transformation_matrix.T, w_fit)
-    return w_fit, c_fit, r_fit, fit_err
+    inv = np.linalg.inv(transformation_matrix)
+    c_fit = np.dot(inv, c_fit.T).T
+    w_fit = np.dot(inv, w_fit.T).T
+    return w_fit[:3], c_fit[:3], r_fit, fit_err
 
 
-def find_circle(p0: NDArray, p1, p2):
+def find_circle(p0, p1, p2):
     x1, y1 = p0[:2]
     x2, y2 = p1[:2]
     x3, y3 = p2[:2]
