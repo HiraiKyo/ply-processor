@@ -6,6 +6,8 @@ from ply_processor.config import Config
 from ply_processor.geometry import get_rotation_matrix_from_vectors, point_line_distance
 from scipy.optimize import minimize
 
+from ply_processor.snapshot import create_mesh_line
+
 
 def detect_cylinder(
     pcd: o3d.geometry.PointCloud,
@@ -54,6 +56,11 @@ def detect_cylinder(
 
 
 def fit_fixed_axis(points_raw, axis):
+    # Raw points
+    pcd = o3d.geometry.PointCloud()
+    pcd.points = o3d.utility.Vector3dVector(points_raw)
+    o3d.visualization.draw_geometries([pcd], window_name="座標系変換前")
+
     # 重心を原点、Z軸を平面の法線ベクトルとする座標系に変換
     mean = np.mean(points_raw, axis=0)
     transformation_matrix = np.eye(4)
@@ -61,13 +68,20 @@ def fit_fixed_axis(points_raw, axis):
     transformation_matrix[:3, :3] = get_rotation_matrix_from_vectors(
         np.array([0, 0, 1]), axis
     )
+    transformation_matrix_inv = np.linalg.inv(transformation_matrix)
+
     # アフィン変換のために4x1に変換
     points = np.concatenate([points_raw, np.ones((points_raw.shape[0], 1))], axis=1)
     points = np.dot(transformation_matrix, points.T).T
 
+    # 可視化
+    pcd.points = o3d.utility.Vector3dVector(points[:, :3])
+    o3d.visualization.draw_geometries([pcd], window_name="座標系変換後")
+
     # 初期値
     c_fit = np.array([0, 0, 0, 0])
-    w_fit = np.array([0, 0, 1, 0])
+    w_fit = np.dot(transformation_matrix_inv[:3, :3], np.array(axis).T).T
+    w_fit = np.append(w_fit, 1)
     r_fit = Config.MODEL["r"]
     fit_err = 0
 
@@ -94,10 +108,16 @@ def fit_fixed_axis(points_raw, axis):
     # 3点を通る円の中心の平均を求める
     c_fit = np.mean(centers, axis=0)
 
+    # 逆変換前に中心軸描画
+    print(f"Guess before converted: {c_fit[:3]}, {w_fit[:3]}, {r_fit}")
+    line_set = create_mesh_line(np.concatenate([c_fit[:3], w_fit[:3] * 100]))
+    o3d.visualization.draw_geometries(
+        [pcd, line_set], window_name="逆変換前、中心軸描画"
+    )
+
     # もとの座標系に戻す
-    inv = np.linalg.inv(transformation_matrix)
-    c_fit = np.dot(inv, c_fit.T).T
-    w_fit = np.dot(inv, w_fit.T).T
+    c_fit = np.dot(transformation_matrix_inv, c_fit.T).T
+    w_fit = np.dot(transformation_matrix_inv, w_fit.T).T
     return w_fit[:3], c_fit[:3], r_fit, fit_err
 
 

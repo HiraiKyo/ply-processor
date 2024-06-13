@@ -127,3 +127,26 @@ def create_mesh_plane(plane_model: NDArray[np.float32], center: NDArray[np.float
     plane_mesh.transform(transformation_matrix)
 
     return plane_mesh
+
+
+def create_mesh_line(line_model: NDArray[np.float32]):
+    """_summary_
+
+    Args:
+        line_model (NDArray[np.float32]): array(x0, y0, z0, a, b, c)
+
+    Returns:
+        open3d.geometry.LineSet
+    """
+    # 直線メッシュの作成
+    points = np.array([line_model[:3], line_model[:3] + line_model[3:]])
+    lines = [[0, 1]]
+    colors = [[0, 0, 0] for i in range(len(lines))]
+
+    line_set = o3d.geometry.LineSet(
+        points=o3d.utility.Vector3dVector(points),
+        lines=o3d.utility.Vector2iVector(lines),
+    )
+    line_set.colors = o3d.utility.Vector3dVector(colors)
+
+    return line_set
