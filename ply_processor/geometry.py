@@ -1,6 +1,7 @@
 import math
 import numpy as np
 from numpy.typing import NDArray
+from scipy.spatial.transform import Rotation
 
 
 def normalize(vector: NDArray[np.float32]) -> NDArray[np.float32]:
@@ -81,17 +82,15 @@ def get_rotation_matrix_from_vectors(vec1, vec2):
     Returns:
         _description_
     """
+    # vec1 -> vec2 の回転ベクトルを導出
     a = normalize(vec1)
     b = normalize(vec2)
-    v = np.cross(a, b)
-    c = np.dot(a, b)
-    s = np.linalg.norm(v)
-    kmat = np.array(
-        [
-            [0, -v[2], v[1]],
-            [v[2], 0, -v[0]],
-            [-v[1], v[0], 0],
-        ]
-    )
-    rotation_matrix = np.eye(3) + kmat + kmat.dot(kmat) * ((1 - c) / (s**2))
+    cross = np.cross(a, b)
+    dot = np.dot(a, b)
+    angle = np.arccos(dot)
+    rotvec = cross * angle
+
+    # 回転行列を導出
+    rotation_matrix = Rotation.from_rotvec(rotvec).as_matrix()
+
     return rotation_matrix

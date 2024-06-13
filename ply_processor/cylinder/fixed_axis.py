@@ -56,10 +56,14 @@ def detect_cylinder(
 
 
 def fit_fixed_axis(points_raw, axis):
+
     # Raw points
+    coordinate_frame = o3d.geometry.TriangleMesh.create_coordinate_frame(size=10)
     pcd = o3d.geometry.PointCloud()
     pcd.points = o3d.utility.Vector3dVector(points_raw)
-    o3d.visualization.draw_geometries([pcd], window_name="座標系変換前")
+    o3d.visualization.draw_geometries(
+        [pcd, coordinate_frame], window_name="座標系変換前"
+    )
 
     # 重心を原点、Z軸を平面の法線ベクトルとする座標系に変換
     mean = np.mean(points_raw, axis=0)
@@ -69,14 +73,16 @@ def fit_fixed_axis(points_raw, axis):
         np.array([0, 0, 1]), axis
     )
     transformation_matrix_inv = np.linalg.inv(transformation_matrix)
-
+    print(transformation_matrix)
     # アフィン変換のために4x1に変換
     points = np.concatenate([points_raw, np.ones((points_raw.shape[0], 1))], axis=1)
     points = np.dot(transformation_matrix, points.T).T
 
     # 可視化
     pcd.points = o3d.utility.Vector3dVector(points[:, :3])
-    o3d.visualization.draw_geometries([pcd], window_name="座標系変換後")
+    o3d.visualization.draw_geometries(
+        [pcd, coordinate_frame], window_name="座標系変換後"
+    )
 
     # 初期値
     c_fit = np.array([0, 0, 0, 0])
@@ -112,7 +118,7 @@ def fit_fixed_axis(points_raw, axis):
     print(f"Guess before converted: {c_fit[:3]}, {w_fit[:3]}, {r_fit}")
     line_set = create_mesh_line(np.concatenate([c_fit[:3], w_fit[:3] * 100]))
     o3d.visualization.draw_geometries(
-        [pcd, line_set], window_name="逆変換前、中心軸描画"
+        [pcd, line_set, coordinate_frame], window_name="逆変換前、中心軸描画"
     )
 
     # もとの座標系に戻す
