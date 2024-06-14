@@ -1,8 +1,8 @@
 .venv
 .env.development
 .env.production
-data/
-out/
+data/*
+out/*
 
 # Byte-compiled / optimized / DLL files
 __pycache__/

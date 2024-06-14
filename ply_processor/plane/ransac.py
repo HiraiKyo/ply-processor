@@ -5,6 +5,8 @@ from numpy.typing import NDArray
 from ply_processor.config import Config
 import random
 
+from ply_processor.snapshot import view_point_cloud
+
 
 def detect_plane(
     pcd: o3d.geometry.PointCloud,
@@ -22,7 +24,9 @@ def detect_plane(
     points = np.asarray(pcd.points)
     plane = Plane()
 
-    plane_model, inliers = plane.fit(points, 0.01, maxIteration=Config.MAX_ITERATION)
+    plane_model, inliers = plane.fit(
+        points, thresh=Config.INLIER_THRESHOLD, maxIteration=Config.MAX_ITERATION
+    )
 
     [a, b, c, d] = plane_model
     print(f"Plane equation: {a:.2f}x + {b:.2f}y + {c:.2f}z + {d:.2f} = 0")
@@ -33,6 +37,12 @@ def detect_plane(
 
     # 平面以外の点を抽出
     outlier_cloud = pcd.select_by_index(inliers, invert=True)
+
+    if Config.MODE == "dev":
+        coordinate_frame = o3d.geometry.TriangleMesh.create_coordinate_frame(size=10)
+        view_point_cloud(
+            [inlier_cloud, outlier_cloud, coordinate_frame], "座標系変換前"
+        )
 
     # 可視化
     return Ok([inlier_cloud, outlier_cloud, plane_model])

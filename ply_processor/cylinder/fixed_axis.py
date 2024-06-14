@@ -47,7 +47,6 @@ def detect_cylinder(
     outliers = np.where(distances >= Config.INLIER_THRESHOLD)[0]
     outliers_cloud = pcd.select_by_index(outliers)
 
-    # 可視化
     return Ok([inliers_cloud, outliers_cloud, cylinder_model])
 
 

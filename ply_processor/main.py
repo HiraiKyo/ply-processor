@@ -1,4 +1,5 @@
 import open3d as o3d
+from ply_processor.clip.plane import clip_plane
 from ply_processor.plane.ransac import detect_plane
 from ply_processor.cylinder.fixed_axis import detect_cylinder
 import pandas as pd
@@ -50,12 +51,25 @@ def main():
 
         # 実行時間を計測
         start = time.perf_counter()
-        # フィッティング
+        # 点群処理
+        # 板底面検出
         plane_inlier_cloud, plane_outlier_cloud, plane_model = detect_plane(
             pcd
         ).ok_value
+        # 板側面検出
+        side_plane_inlier_cloud, side_plane_outlier_cloud, side_plane_model = (
+            detect_plane(plane_outlier_cloud).ok_value
+        )
+        # 板内側切り出し
+        clip_inlier_cloud, clip_outlier_cloud = clip_plane(
+            side_plane_outlier_cloud, plane_model
+        ).ok_value
+        clip2_inlier_cloud, clip2_outlier_cloud = clip_plane(
+            clip_inlier_cloud, side_plane_model
+        ).ok_value
+        # 円筒検出
         cylinder_inlier_cloud, cylinder_outlier_cloud, cylinder_model = detect_cylinder(
-            plane_outlier_cloud, plane_model=plane_model
+            clip2_inlier_cloud, plane_model=plane_model
         ).ok_value
 
         end = time.perf_counter()
@@ -71,8 +85,12 @@ def main():
         capture_snapshot(
             vis,
             filename,
+            cylinder_inlier_cloud.get_center(),
             [
                 plane_inlier_cloud,
+                side_plane_inlier_cloud,
+                clip_outlier_cloud,
+                clip2_outlier_cloud,
                 cylinder_inlier_cloud,
                 cylinder_outlier_cloud,
             ],
@@ -86,6 +104,9 @@ def main():
             view_point_cloud(
                 [
                     plane_inlier_cloud,
+                    side_plane_inlier_cloud,
+                    clip_outlier_cloud,
+                    clip2_outlier_cloud,
                     cylinder_inlier_cloud,
                     cylinder_outlier_cloud,
                     plane_mesh,

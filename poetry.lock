@@ -1453,17 +1453,6 @@ files = [
 diagrams = ["jinja2", "railroad-diagrams"]
 
 [[package]]
-name = "pyransac3d"
-version = "0.6.0"
-description = "A python tool for fitting primitives 3D shapes in point clouds using RANSAC algorithm"
-optional = false
-python-versions = ">=3.6"
-files = [
-    {file = "pyransac3d-0.6.0-py3-none-any.whl", hash = "sha256:d081abf704b97b5c087418202acac385872da60d7af08556e91faf290784443f"},
-    {file = "pyransac3d-0.6.0.tar.gz", hash = "sha256:2ac153b2e94cf0326b2ebf88246f4be5f2a4fd57434e9d3a7d8ed15784843328"},
-]
-
-[[package]]
 name = "pytest"
 version = "8.2.2"
 description = "pytest: simple powerful testing with Python"
@@ -2036,4 +2025,4 @@ test = ["big-O", "importlib-resources", "jaraco.functools", "jaraco.itertools", 
 [metadata]
 lock-version = "2.0"
 python-versions = "^3.11"
-content-hash = "0f75c43ef143a8e93021bfa7c8f652d875608f14832f4f0a3bae2b7451179aeb"
+content-hash = "142c3a4e51e0ed14be81a6ba99b62818f4fcea8b328e568249bbd656ed40505e"

@@ -9,6 +9,7 @@ from ply_processor.geometry import get_rotation_matrix_from_vectors
 def capture_snapshot(
     vis,
     filename: str,
+    lookat: NDArray[np.float32],
     pcds: list,
 ) -> Result[None, str]:
     vis.clear_geometries()
@@ -25,9 +26,9 @@ def capture_snapshot(
     # Zoom, front, lookat, upの設定
     ctr = vis.get_view_control()
     ctr.set_zoom(0.8)
-    ctr.set_front([-0.4999, -0.1659, -0.8499])
-    ctr.set_lookat([2.1813, 2.0619, 2.0999])
-    ctr.set_up([0.1204, -0.9852, 0.1215])
+    ctr.set_front([0.0, 0.0, -1.0])
+    ctr.set_lookat([lookat[0], lookat[1], lookat[2]])
+    ctr.set_up([0.0, 0.0, -1.0])
 
     for pcd in pcds:
         vis.update_geometry(pcd)
