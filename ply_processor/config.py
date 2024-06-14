@@ -1,4 +1,6 @@
 class Config(dict):
+    MAX_PLANE_ITERATION = 20
+    PLANE_POINTS_THRESHOLD = 5000
     MAX_ITERATION = 1000
     LOOP = 10
     FILEPATH = "data/stained/segmented.ply"

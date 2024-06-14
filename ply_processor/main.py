@@ -18,36 +18,17 @@ import numpy as np
 
 # データフレーム作成
 # 平面の方程式
-plane_df = pd.DataFrame(None, columns=["a", "b", "c", "d", "calc_time"])
+columns = ["a", "b", "c", "d", "calc_time"]
+plane_df = pd.DataFrame(None, columns=columns)
 # 円柱データ
-cylinder_df = (
-    pd.DataFrame(
-        None,
-        columns=[
-            "center_x",
-            "center_y",
-            "center_z",
-            "axis_x",
-            "axis_y",
-            "axis_z",
-            "radius",
-            "calc_time",
-        ],
-    ),
-)
-
+columns = ["x0", "y0", "z0", "a", "b", "c", "r", "calc_time"]
+cylinder_df = pd.DataFrame(None, columns=columns)
 # 基準点からの円筒軸位置推定
+columns = ["radius", "calc_time"]
+columns.append([f"distance_plane{i}" for i in range(Config.MAX_PLANE_ITERATION)])
 estimated_df = pd.DataFrame(
     None,
-    columns=[
-        "distance_plane0",
-        "distance_plane1",
-        "distance_plane2",
-        "distance_plane3",
-        "distance_plane4",
-        "radius",
-        "calc_time",
-    ],
+    columns=columns,
 )
 
 # 日時でディレクトリを作成
@@ -77,40 +58,30 @@ def main():
         plane_inlier_cloud, plane_outlier_cloud, plane_model = detect_plane(
             pcd
         ).ok_value
-        visualising_pcds.append(plane_inlier_cloud)
 
         # 板側面検出
-        side_plane_inlier_cloud, side_plane_outlier_cloud, side_plane_model = (
-            detect_plane(plane_outlier_cloud).ok_value
-        )
-        visualising_pcds.append(side_plane_inlier_cloud)
-        # 板側面検出2
-        side_plane2_inlier_cloud, side_plane2_outlier_cloud, side_plane2_model = (
-            detect_plane(side_plane_outlier_cloud).ok_value
-        )
-        visualising_pcds.append(side_plane2_inlier_cloud)
-        # 板側面検出3
-        side_plane3_inlier_cloud, side_plane3_outlier_cloud, side_plane3_model = (
-            detect_plane(side_plane2_outlier_cloud).ok_value
-        )
-        visualising_pcds.append(side_plane3_inlier_cloud)
-        # 板側面検出4
-        side_plane4_inlier_cloud, side_plane4_outlier_cloud, side_plane4_model = (
-            detect_plane(side_plane3_outlier_cloud).ok_value
-        )
-        # 板側面検出5
-        side_plane5_inlier_cloud, side_plane5_outlier_cloud, side_plane5_model = (
-            detect_plane(side_plane4_outlier_cloud).ok_value
-        )
-        visualising_pcds.append(side_plane5_inlier_cloud)
-        # 板側面検出6
-        side_plane6_inlier_cloud, side_plane6_outlier_cloud, side_plane6_model = (
-            detect_plane(side_plane5_outlier_cloud).ok_value
-        )
-        visualising_pcds.append(side_plane6_inlier_cloud)
+        side_plane_inlier_clouds = []
+        side_plane_outlier_clouds = []
+        side_plane_models = []
+        for j in range(Config.MAX_PLANE_ITERATION):
+            last_cloud = (
+                side_plane_outlier_clouds[-1]
+                if side_plane_outlier_clouds
+                else plane_outlier_cloud
+            )
+            side_plane_inlier_cloud, side_plane_outlier_cloud, side_plane_model = (
+                detect_plane(last_cloud).ok_value
+            )
+            side_plane_inlier_clouds.append(side_plane_inlier_cloud)
+            side_plane_outlier_clouds.append(side_plane_outlier_cloud)
+            side_plane_models.append(side_plane_model)
+            if len(side_plane_inlier_cloud.points) < Config.PLANE_POINTS_THRESHOLD:
+                break
+            j += 1
+
+        visualising_pcds += side_plane_inlier_clouds
 
         # 板内側切り出し
-        clip3_inlier_cloud = side_plane6_outlier_cloud
         # clip_inlier_cloud, clip_outlier_cloud = clip_plane(
         #     side_plane2_outlier_cloud, plane_model
         # ).ok_value
@@ -126,22 +97,21 @@ def main():
 
         # 円筒軸推測
         cylinder_inlier_cloud, cylinder_outlier_cloud, cylinder_model = detect_cylinder(
-            clip3_inlier_cloud, plane_model=plane_model
+            side_plane_outlier_clouds[2], plane_model=plane_model
         ).ok_value
         visualising_pcds.append(cylinder_inlier_cloud)
-        # 円筒フィッティング
-        fit_cylinder_inlier_cloud, fit_cylinder_outlier_cloud, cylinder_model = (
-            fit_cylinder(cylinder_inlier_cloud, axis=cylinder_model[:3]).ok_value
-        )
+        # # 円筒フィッティング
+        # fit_cylinder_inlier_cloud, fit_cylinder_outlier_cloud, cylinder_model = (
+        #     fit_cylinder(cylinder_inlier_cloud, axis=cylinder_model[:3]).ok_value
+        # )
 
         # 基準点からの円筒軸, 円半径位置算出
-        d0 = point_plane_distance(cylinder_model[:3], plane_model)
-        d1 = point_plane_distance(cylinder_model[:3], side_plane_model)
-        d2 = point_plane_distance(cylinder_model[:3], side_plane2_model)
-        d3 = point_plane_distance(cylinder_model[:3], side_plane3_model)
-        d4 = point_plane_distance(cylinder_model[:3], side_plane4_model)
+        d = [
+            point_plane_distance(cylinder_model[:3], plane)
+            for plane in side_plane_models
+        ]
         r = cylinder_model[6]
-        print(f"Estimated distances: ({d1:.2f}, {d2:.2f}, {d3:.2f}), radius: {r:.2f}")
+        print(f"Estimated distances: ({d}), radius: {r:.2f}")
 
         end = time.perf_counter()
         elapsed = "{:.1f}".format(end - start)
@@ -150,21 +120,22 @@ def main():
         # dataframeに格納
         plane_df.loc[i] = np.append(plane_model, elapsed)
         cylinder_df.loc[i] = np.append(cylinder_model, elapsed)
-        estimated_df.loc[i] = np.append(d0, d1, d2, d3, d4, r, elapsed)
+        # estimated_df.loc[i] = np.append(r, elapsed, np.array(d))
 
         # CSV保存
         plane_df.to_csv(f"{dir_name}/plane.csv")
         cylinder_df.to_csv(f"{dir_name}/cylinder.csv")
-        estimated_df.to_csv(f"{dir_name}/estimated.csv")
+        # estimated_df.to_csv(f"{dir_name}/estimated.csv")
 
         print("Visualizing...")
         filename = f"{dir_name}/{i}.png"
 
+        visualising_pcds.append(cylinder_outlier_cloud),
         capture_snapshot(
             vis,
             filename,
             cylinder_inlier_cloud.get_center(),
-            visualising_pcds.append(cylinder_outlier_cloud),
+            visualising_pcds,
         )
         # 円筒軸と半径からメッシュを作成
         if Config.MODE == "dev":
@@ -172,9 +143,9 @@ def main():
             cylinder_mesh = create_mesh_cylinder(
                 cylinder_model, cylinder_inlier_cloud.get_center()
             )
-            view_point_cloud(
-                visualising_pcds.append(plane_mesh, cylinder_mesh), "最終結果"
-            )
+            visualising_pcds.append(plane_mesh)
+            visualising_pcds.append(cylinder_mesh)
+            view_point_cloud(visualising_pcds, "最終結果")
         i += 1
 
     vis.destroy_window()

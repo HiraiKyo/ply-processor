@@ -4,7 +4,6 @@ import numpy as np
 from numpy.typing import NDArray
 from ply_processor.config import Config
 import random
-
 from ply_processor.snapshot import view_point_cloud
 
 
@@ -29,7 +28,9 @@ def detect_plane(
     )
 
     [a, b, c, d] = plane_model
-    print(f"Plane equation: {a:.2f}x + {b:.2f}y + {c:.2f}z + {d:.2f} = 0")
+    print(
+        f"Plane equation: {a:.2f}x + {b:.2f}y + {c:.2f}z + {d:.2f} = 0, Points: {len(inliers)}"
+    )
 
     # インライアの点を抽出して色を付ける
     inlier_cloud = pcd.select_by_index(inliers)

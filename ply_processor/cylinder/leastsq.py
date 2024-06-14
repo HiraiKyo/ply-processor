@@ -34,8 +34,8 @@ def detect_cylinder(
     guess_angles = None
 
     # 初期軸の設定
-    if kwargs["axis"]:
-        axis = kwargs["axis"]
+    axis = kwargs.get("axis")
+    if axis is not None:
         axis = normalize(axis)
         r = np.linalg.norm(axis)
         # 法線ベクトルを極座標変換
