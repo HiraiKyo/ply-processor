@@ -81,7 +81,7 @@ def create_mesh_cylinder(
     # 位置と姿勢の変換行列を作成
     transformation_matrix = np.eye(4)
     transformation_matrix[:3, 3] = p0
-    transformation_matrix[:3, :3] = get_rotation_matrix_from_vectors(v0, v)
+    transformation_matrix[:3, :3] = get_rotation_matrix_from_vectors(v, v0)
 
     # 円筒を原点に移動
     cylinder_mesh.translate(-np.array(cylinder_mesh.get_center()))
@@ -117,9 +117,9 @@ def create_mesh_plane(plane_model: NDArray[np.float32], center: NDArray[np.float
 
     # 変換行列を作成
     transformation_matrix = np.eye(4)
-    # 回転
+    # 姿勢
     v0 = np.array([0.0, 0.0, 1.0])
-    transformation_matrix[:3, :3] = get_rotation_matrix_from_vectors(v0, normal)
+    transformation_matrix[:3, :3] = get_rotation_matrix_from_vectors(normal, v0)
     # 平行移動
     transformation_matrix[:3, 3] = p0
 

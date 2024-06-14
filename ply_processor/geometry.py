@@ -83,8 +83,8 @@ def get_rotation_matrix_from_vectors(vec1, vec2):
         _description_
     """
     # vec1 -> vec2 の回転ベクトルを導出
-    a = normalize(vec1)
-    b = normalize(vec2)
+    b = normalize(vec1)
+    a = normalize(vec2)
     cross = np.cross(a, b)
     dot = np.dot(a, b)
     angle = np.arccos(dot)

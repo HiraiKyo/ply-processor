@@ -56,47 +56,60 @@ def detect_cylinder(
 
 
 def fit_fixed_axis(points_raw, axis):
-    # Raw points
-    coordinate_frame = o3d.geometry.TriangleMesh.create_coordinate_frame(size=10)
-    pcd = o3d.geometry.PointCloud()
-    pcd.points = o3d.utility.Vector3dVector(points_raw)
-    view_point_cloud([pcd, coordinate_frame], "座標系変換前")
+    if Config.MODE == "dev":
+        # Raw points
+        coordinate_frame = o3d.geometry.TriangleMesh.create_coordinate_frame(size=10)
+        pcd = o3d.geometry.PointCloud()
+        pcd.points = o3d.utility.Vector3dVector(points_raw)
+        view_point_cloud([pcd, coordinate_frame], "座標系変換前")
 
     # 重心を原点、Z軸を平面の法線ベクトルとする座標系に変換
     transformation_matrix = np.eye(4)
     mean = np.mean(points_raw, axis=0)
     points = points_raw - mean
-    line_set = create_mesh_line(
-        np.concatenate([np.array([0, 0, 0]), np.array(axis) * 100])
-    )
-    pcd.points = o3d.utility.Vector3dVector(points)
-    view_point_cloud([pcd, coordinate_frame, line_set], "平行移動後")
+
+    if Config.MODE == "dev":
+        line_set = create_mesh_line(
+            np.concatenate([np.array([0, 0, 0]), np.array(axis) * 100])
+        )
+        coordinate_frame = o3d.geometry.TriangleMesh.create_coordinate_frame(size=10)
+        pcd = o3d.geometry.PointCloud()
+        pcd.points = o3d.utility.Vector3dVector(points)
+        view_point_cloud([pcd, coordinate_frame, line_set], "平行移動後")
+
     transformation_matrix[:3, :3] = get_rotation_matrix_from_vectors(
         np.array([0, 0, 1]), axis
     )
     transformation_matrix_inv = np.linalg.inv(transformation_matrix)
-    print(transformation_matrix)
+    print(f"Transformation Matrix: {transformation_matrix}")
     # アフィン変換のために4x1に変換
     points = np.concatenate([points, np.ones((points.shape[0], 1))], axis=1)
     points = np.dot(transformation_matrix, points.T).T
 
-    # 可視化
-    pcd.points = o3d.utility.Vector3dVector(points[:, :3])
-    view_point_cloud([pcd, coordinate_frame], "座標系変換後")
+    if Config.MODE == "dev":
+        # 可視化
+        coordinate_frame = o3d.geometry.TriangleMesh.create_coordinate_frame(size=10)
+        pcd = o3d.geometry.PointCloud()
+        pcd.points = o3d.utility.Vector3dVector(points[:, :3])
+        view_point_cloud([pcd, coordinate_frame], "座標系変換後")
 
     # 初期値
-    c_fit = np.array([0, 0, 0, 0])
-    w_fit = np.dot(transformation_matrix_inv[:3, :3], np.array(axis).T).T
-    w_fit = np.append(w_fit, 1)
+    c_fit = np.array([0, 0, 0, 1])
+    w_fit = np.array([0, 0, 1, 1])
     r_fit = Config.MODEL["r"]
     fit_err = 0
 
     # 円筒側面の点群を設定値より抽出
-    z = points[:, 2]
-    points_intp = np.where(z > Config.MODEL["h_bottom"])[0]
-    points_intp_inv = np.where(z < -Config.MODEL["h_bottom"])[0]
+    points_intp = np.where(points[:, 2] > Config.MODEL["h_bottom"])[0]
+    points_intp_inv = np.where(points[:, 2] < -Config.MODEL["h_bottom"])[0]
     if len(points_intp) < len(points_intp_inv):
         points_intp = points_intp_inv
+        points = points[points_intp]
+        points_intp = np.where(points[:, 2] > -Config.MODEL["h_top"])[0]
+    else:
+        points = points[points_intp]
+        points_intp = np.where(points[:, 2] < Config.MODEL["h_top"])[0]
+
     centers = []
     # 任意3点を選び、3点を通る円の方程式を求める
     for i in range(Config.MAX_ITERATION):
@@ -114,16 +127,22 @@ def fit_fixed_axis(points_raw, axis):
     # 3点を通る円の中心の平均を求める
     c_fit = np.mean(centers, axis=0)
 
-    # 逆変換前に中心軸描画
-    print(f"Guess before converted: {c_fit[:3]}, {w_fit[:3]}, {r_fit}")
-    line_set = create_mesh_line(np.concatenate([c_fit[:3], w_fit[:3] * 100]))
-    view_point_cloud([pcd, line_set, coordinate_frame], "逆変換前、中心軸描画")
+    if Config.MODE == "dev":
+        # 逆変換前に中心軸描画
+        coordinate_frame = o3d.geometry.TriangleMesh.create_coordinate_frame(size=10)
+        pcd = o3d.geometry.PointCloud()
+        pcd.points = o3d.utility.Vector3dVector(points[:, :3])
+        print(f"Guess before converted: {c_fit[:3]}, {w_fit[:3]}, {r_fit}")
+        line_set = create_mesh_line(np.concatenate([c_fit[:3], w_fit[:3] * 100]))
+        view_point_cloud([pcd, line_set, coordinate_frame], "逆変換前、中心軸描画")
 
     # もとの座標系に戻す
     c_fit = np.dot(transformation_matrix_inv, c_fit.T).T
     w_fit = np.dot(transformation_matrix_inv, w_fit.T).T
-    c_fit += mean
-    return w_fit[:3], c_fit[:3], r_fit, fit_err
+    c_fit = c_fit[:3] + mean
+    w_fit = w_fit[:3]
+
+    return w_fit, c_fit, r_fit, fit_err
 
 
 def find_circle(p0, p1, p2):
