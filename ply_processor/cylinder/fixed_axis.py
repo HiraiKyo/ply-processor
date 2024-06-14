@@ -11,7 +11,7 @@ from ply_processor.snapshot import create_mesh_line, view_point_cloud
 
 def detect_cylinder(
     pcd: o3d.geometry.PointCloud,
-    **kwargs,
+    plane_model: NDArray[np.float32],
 ) -> Result[
     list[
         o3d.geometry.PointCloud,
@@ -20,14 +20,10 @@ def detect_cylinder(
     ],
     str,
 ]:
-    # 前処理
     points = np.asarray(pcd.points)
 
-    plane_model = kwargs["plane_model"]
-    normal = plane_model[:3]
-
     # 円筒フィッティングロジック部分
-    w_fit, C_fit, r_fit, fit_err = fit_fixed_axis(points, axis=normal)
+    w_fit, C_fit, r_fit, fit_err = fit_fixed_axis(points, plane_model)
 
     # 推定円筒方程式
     cylinder_model = np.concatenate([C_fit, w_fit, np.array([r_fit])])
@@ -55,7 +51,7 @@ def detect_cylinder(
     return Ok([inliers_cloud, outliers_cloud, cylinder_model])
 
 
-def fit_fixed_axis(points_raw, axis):
+def fit_fixed_axis(points_raw, plane_model):
     if Config.MODE == "dev":
         # Raw points
         coordinate_frame = o3d.geometry.TriangleMesh.create_coordinate_frame(size=10)
@@ -63,14 +59,22 @@ def fit_fixed_axis(points_raw, axis):
         pcd.points = o3d.utility.Vector3dVector(points_raw)
         view_point_cloud([pcd, coordinate_frame], "座標系変換前")
 
-    # 重心を原点、Z軸を平面の法線ベクトルとする座標系に変換
+    # 平面上の1点を原点、Z軸を平面の法線ベクトルとする座標系に変換
     transformation_matrix = np.eye(4)
     mean = np.mean(points_raw, axis=0)
-    points = points_raw - mean
+    origin = np.array(
+        [
+            mean[0],
+            mean[1],
+            -(plane_model[3] + mean[0] * plane_model[0] + mean[1] * plane_model[1])
+            / plane_model[2],
+        ]
+    )
+    points = points_raw - origin
 
     if Config.MODE == "dev":
         line_set = create_mesh_line(
-            np.concatenate([np.array([0, 0, 0]), np.array(axis) * 100])
+            np.concatenate([np.array([0, 0, 0]), np.array(plane_model[:3]) * 100])
         )
         coordinate_frame = o3d.geometry.TriangleMesh.create_coordinate_frame(size=10)
         pcd = o3d.geometry.PointCloud()
@@ -78,7 +82,7 @@ def fit_fixed_axis(points_raw, axis):
         view_point_cloud([pcd, coordinate_frame, line_set], "平行移動後")
 
     transformation_matrix[:3, :3] = get_rotation_matrix_from_vectors(
-        np.array([0, 0, 1]), axis
+        np.array([0, 0, 1]), plane_model[:3]
     )
     transformation_matrix_inv = np.linalg.inv(transformation_matrix)
     print(f"Transformation Matrix: {transformation_matrix}")
@@ -110,6 +114,15 @@ def fit_fixed_axis(points_raw, axis):
         points = points[points_intp]
         points_intp = np.where(points[:, 2] < Config.MODEL["h_top"])[0]
 
+    if len(points_intp) == 0:
+        raise ValueError("No points in the cylinder side")
+
+    if Config.MODE == "dev":
+        pcd = o3d.geometry.PointCloud()
+        tmp = points[points_intp]
+        pcd.points = o3d.utility.Vector3dVector(tmp[:, :3])
+        view_point_cloud([pcd], "円筒側面の点群")
+
     centers = []
     # 任意3点を選び、3点を通る円の方程式を求める
     for i in range(Config.MAX_ITERATION):
@@ -119,8 +132,14 @@ def fit_fixed_axis(points_raw, axis):
         p2 = points[indices[2]]
         a, b, r = find_circle(p0, p1, p2)
         # 円半径が設定値プラマイ1以内の結果を収集する
-        if r < Config.MODEL["r"] + 1 and r > Config.MODEL["r"] - 1:
+        thresh = 1.0
+        if r < Config.MODEL["r"] + thresh and r > Config.MODEL["r"] - thresh:
             centers.append([a, b, 0, 0])  # z=0
+
+    if len(centers) == 0:
+        raise ValueError(
+            f"No circles with the radius around of {Config.MODEL['r']} was found"
+        )
 
     # 3点を通る円の中心のうち、設定値近傍の数を出力
     print(f"Number of circles: {len(centers)}, Iterations: {Config.MAX_ITERATION}")
@@ -139,7 +158,7 @@ def fit_fixed_axis(points_raw, axis):
     # もとの座標系に戻す
     c_fit = np.dot(transformation_matrix_inv, c_fit.T).T
     w_fit = np.dot(transformation_matrix_inv, w_fit.T).T
-    c_fit = c_fit[:3] + mean
+    c_fit = c_fit[:3] + origin
     w_fit = w_fit[:3]
 
     return w_fit, c_fit, r_fit, fit_err
