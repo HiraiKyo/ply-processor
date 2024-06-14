@@ -1,7 +1,6 @@
 import open3d as o3d
 from result import Ok, Result
 import numpy as np
-import pyransac3d as pyrsc
 from numpy.typing import NDArray
 from ply_processor.config import Config
 

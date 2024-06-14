@@ -56,7 +56,7 @@ def point_line_distance(
     points: NDArray[np.float32],
     line_point: NDArray[np.float32],
     line_vector: NDArray[np.float32],
-) -> float:
+) -> NDArray[np.float32]:
     """_summary_
 
     Args:
@@ -70,6 +70,25 @@ def point_line_distance(
     v = normalize(line_vector)
     vt = np.inner(u, v).reshape(-1, 1).dot(v.reshape(-1, 3))
     return np.linalg.norm(u - vt, axis=1)
+
+
+def point_plane_distance(
+    point: NDArray[np.float32],
+    plane_model: NDArray[np.float32],
+) -> float:
+    """_summary_
+
+    Args:
+        points (NDArray[np.float32]): _description_
+        plane_model (NDArray[np.float32]): _description_
+
+    Returns:
+        float: _description_
+    """
+    a, b, c, d = plane_model
+    return np.abs(a * point[0] + b * point[1] + c * point[2] + d) / np.sqrt(
+        a**2 + b**2 + c**2
+    )
 
 
 def get_rotation_matrix_from_vectors(vec1, vec2):

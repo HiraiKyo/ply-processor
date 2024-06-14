@@ -4,8 +4,7 @@ import numpy as np
 from numpy.typing import NDArray
 from ply_processor.config import Config
 from scipy.optimize import leastsq
-from pyransac3d import Cylinder
-from ply_processor.geometry import point_line_distance
+from ply_processor.geometry import normalize, point_line_distance
 from cylinder_fitting import fit
 
 
@@ -35,13 +34,13 @@ def detect_cylinder(
     guess_angles = None
 
     # 初期軸の設定
-    if kwargs["plane_model"]:
-        plane_model = kwargs["plane_model"]
-        normal = plane_model[:3]
-        r = np.linalg.norm(normal)
+    if kwargs["axis"]:
+        axis = kwargs["axis"]
+        axis = normalize(axis)
+        r = np.linalg.norm(axis)
         # 法線ベクトルを極座標変換
-        theta = np.arccos(normal[2] / r)
-        phi = np.arctan2(normal[1], normal[0])
+        theta = np.arccos(axis[2] / r)
+        phi = np.arctan2(axis[1], axis[0])
         guess_angles = [(theta, phi)]
 
     w_fit, C_fit, r_fit, fit_err = fit(points, guess_angles=guess_angles)
