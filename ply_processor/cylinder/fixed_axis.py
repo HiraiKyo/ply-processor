@@ -44,6 +44,7 @@ def detect_cylinder(
     inliers_cloud = pcd.select_by_index(inliers)
     inliers_cloud.paint_uniform_color([0, 1.0, 0])
 
+    print(f"Points in cylinder surface: {len(inliers_cloud.points)}")
     outliers = np.where(distances >= Config.INLIER_THRESHOLD)[0]
     outliers_cloud = pcd.select_by_index(outliers)
 
@@ -125,10 +126,11 @@ def fit_fixed_axis(points_raw, plane_model):
     centers = []
     # 任意3点を選び、3点を通る円の方程式を求める
     for i in range(Config.MAX_ITERATION):
-        indices = np.random.choice(points_intp, 3, replace=False)
+        indices = np.random.choice(points_intp, 1, replace=False)
         p0 = points[indices[0]]
-        p1 = points[indices[1]]
-        p2 = points[indices[2]]
+        # 残りの任意点は、直径以内の距離から選択する
+        p1 = find_in_distance(p0, points[points_intp], Config.MODEL["r"] * 2)
+        p2 = find_in_distance(p0, points[points_intp], Config.MODEL["r"] * 2)
         a, b, r = find_circle(p0, p1, p2)
         # 円半径が設定値プラマイ1以内の結果を収集する
         thresh = 1.0
@@ -186,3 +188,13 @@ def find_circle(p0, p1, p2):
     r = np.sqrt((a - x1) ** 2 + (b - y1) ** 2)
 
     return (a, b, r)
+
+
+def find_in_distance(p0, points, distance, min_distance=0.0):
+    distances = np.linalg.norm(points - p0, axis=1)
+    inliers = np.where(distances < distance)[0]
+    if len(inliers) == 0:
+        raise ValueError("No inliers found in the distance.")
+
+    indices = np.random.choice(inliers, 1, replace=False)
+    return points[indices[0]]

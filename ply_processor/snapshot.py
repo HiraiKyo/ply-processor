@@ -26,9 +26,9 @@ def capture_snapshot(
     # Zoom, front, lookat, upの設定
     ctr = vis.get_view_control()
     ctr.set_zoom(0.8)
-    ctr.set_front([0.0, 0.0, -1.0])
+    ctr.set_front([0.0, 0.0, -50.0])
     ctr.set_lookat([lookat[0], lookat[1], lookat[2]])
-    ctr.set_up([0.0, 0.0, -1.0])
+    ctr.set_up([1.0, 0.0, 0.0])
 
     for pcd in pcds:
         vis.update_geometry(pcd)

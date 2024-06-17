@@ -21,11 +21,11 @@ import numpy as np
 columns = ["a", "b", "c", "d", "calc_time"]
 plane_df = pd.DataFrame(None, columns=columns)
 # 円柱データ
-columns = ["x0", "y0", "z0", "a", "b", "c", "r", "calc_time"]
+columns = ["x0", "y0", "z0", "a", "b", "c", "r", "calc_time", "points"]
 cylinder_df = pd.DataFrame(None, columns=columns)
 # 基準点からの円筒軸位置推定
 columns = ["radius", "calc_time"]
-columns.append([f"distance_plane{i}" for i in range(Config.MAX_PLANE_ITERATION)])
+columns += [f"distance_plane{i}" for i in range(Config.MAX_PLANE_ITERATION)]
 estimated_df = pd.DataFrame(
     None,
     columns=columns,
@@ -81,23 +81,22 @@ def main():
 
         visualising_pcds += side_plane_inlier_clouds
 
+        clip_index = 2
+
         # 板内側切り出し
-        # clip_inlier_cloud, clip_outlier_cloud = clip_plane(
-        #     side_plane2_outlier_cloud, plane_model
-        # ).ok_value
-        # visualising_pcds.append(clip_outlier_cloud)
-        # clip2_inlier_cloud, clip2_outlier_cloud = clip_plane(
-        #     clip_inlier_cloud, side_plane_model
-        # ).ok_value
-        # visualising_pcds.append(clip2_outlier_cloud)
-        # clip3_inlier_cloud, clip3_outlier_cloud = clip_plane(
-        #     clip2_inlier_cloud, side_plane2_model
-        # ).ok_value
-        # visualising_pcds.append(clip3_outlier_cloud)
+        clip_inlier_cloud, clip_outlier_cloud = clip_plane(
+            side_plane_outlier_clouds[clip_index], plane_model
+        ).ok_value
+        clip2_inlier_cloud, clip2_outlier_cloud = clip_plane(
+            clip_inlier_cloud, side_plane_models[0]
+        ).ok_value
+        clip3_inlier_cloud, clip3_outlier_cloud = clip_plane(
+            clip2_inlier_cloud, side_plane_models[1]
+        ).ok_value
 
         # 円筒軸推測
         cylinder_inlier_cloud, cylinder_outlier_cloud, cylinder_model = detect_cylinder(
-            side_plane_outlier_clouds[2], plane_model=plane_model
+            clip2_inlier_cloud, plane_model=plane_model
         ).ok_value
         visualising_pcds.append(cylinder_inlier_cloud)
         # # 円筒フィッティング
@@ -119,13 +118,24 @@ def main():
         print("Saving data...")
         # dataframeに格納
         plane_df.loc[i] = np.append(plane_model, elapsed)
-        cylinder_df.loc[i] = np.append(cylinder_model, elapsed)
-        # estimated_df.loc[i] = np.append(r, elapsed, np.array(d))
+        cylinder_df.loc[i] = np.concatenate(
+            [cylinder_model, np.array([elapsed, len(cylinder_inlier_cloud.points)])]
+        )
+        newrow = np.array(
+            [
+                r,
+                elapsed,
+                *d,
+                *[0 for _ in range(Config.MAX_PLANE_ITERATION - len(d))],
+            ]
+        )
+        print(len(estimated_df.columns), len(newrow))
+        estimated_df.loc[i] = newrow
 
         # CSV保存
         plane_df.to_csv(f"{dir_name}/plane.csv")
         cylinder_df.to_csv(f"{dir_name}/cylinder.csv")
-        # estimated_df.to_csv(f"{dir_name}/estimated.csv")
+        estimated_df.to_csv(f"{dir_name}/estimated.csv")
 
         print("Visualizing...")
         filename = f"{dir_name}/{i}.png"
