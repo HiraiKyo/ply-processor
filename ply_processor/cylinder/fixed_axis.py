@@ -1,3 +1,4 @@
+import random
 import open3d as o3d
 import numpy as np
 from numpy.typing import NDArray
@@ -121,32 +122,10 @@ def fit_fixed_axis(points_raw, plane_model):
         pcd = o3d.geometry.PointCloud()
         tmp = points[points_intp]
         pcd.points = o3d.utility.Vector3dVector(tmp[:, :3])
-        view_point_cloud([pcd], "円筒側面の点群")
+        view_point_cloud([pcd], "フィッティング用切り出し部分の点群")
 
-    centers = []
-    # 任意3点を選び、3点を通る円の方程式を求める
-    for i in range(Config.MAX_ITERATION):
-        indices = np.random.choice(points_intp, 1, replace=False)
-        p0 = points[indices[0]]
-        # 残りの任意点は、直径以内の距離から選択する
-        p1 = find_in_distance(p0, points[points_intp], Config.MODEL["r"] * 2)
-        p2 = find_in_distance(p0, points[points_intp], Config.MODEL["r"] * 2)
-        a, b, r = find_circle(p0, p1, p2)
-        # 円半径が設定値プラマイ1以内の結果を収集する
-        thresh = 1.0
-        if r < Config.MODEL["r"] + thresh and r > Config.MODEL["r"] - thresh:
-            centers.append([a, b, 0, 0])  # z=0
-
-    if len(centers) == 0:
-        raise ValueError(
-            f"No circles with the radius around of {Config.MODEL['r']} was found"
-        )
-
-    # 3点を通る円の中心のうち、設定値近傍の数を出力
-    print(f"Number of circles: {len(centers)}, Iterations: {Config.MAX_ITERATION}")
-    # 3点を通る円の中心の平均を求める
-    c_fit = np.mean(centers, axis=0)
-
+    (c_fit, _, _, _)= fit(points, points_intp, np.asarray([0.0, 0.0, 1.0, 0.0]), thresh=0.1, maxIteration=Config.MAX_ITERATION)
+    
     if Config.MODE == "dev":
         # 逆変換前に中心軸描画
         coordinate_frame = o3d.geometry.TriangleMesh.create_coordinate_frame(size=10)
@@ -163,6 +142,41 @@ def fit_fixed_axis(points_raw, plane_model):
     w_fit = w_fit[:3]
 
     return w_fit, c_fit, r_fit, fit_err
+
+
+def fit(points_raw, pointers, plane_model, thresh=0.2, maxIteration=1000):
+    points = points_raw
+    
+    # 軸は平面の法線ベクトル、半径は設定値で固定する
+    c_fit = np.array([0.0, 0.0, 0.0, 1.0])
+    w_fit = plane_model[:3]
+    r_fit = Config.MODEL["r"]
+
+    best_inliers = []
+
+    for i in range(maxIteration):
+        # サンプリング
+        # 任意2点を選び、2点を通る半径rの円の方程式を求める
+        indices = np.random.choice(pointers, 1, replace=False)
+        p0 = points[indices[0]]
+        # 残りの任意点は、直径以内の距離から選択する
+        p1 = find_in_distance(p0, points, Config.MODEL["r"] * 2)
+        cs = find_circle_with_radius(p0, p1, Config.MODEL["r"])
+
+        c = np.concatenate([cs[random.randint(0, 1)], np.asarray([0.0, 1.0])])
+        w = w_fit
+        r = r_fit
+        
+        # 各点の中心軸との距離を算出し、閾値以下の点を抽出する
+        distances = np.abs(point_line_distance(points[:, :3], c[:3], w) - r)
+        pt_id_inliers = np.where(distances <= thresh)[0]
+
+        # 点がより多く含まれる円筒面を見つける
+        if len(pt_id_inliers) > len(best_inliers):
+            best_inliers = pt_id_inliers
+            c_fit = c
+
+    return c_fit, w_fit, r_fit, best_inliers
 
 
 def find_circle(p0, p1, p2):
@@ -189,6 +203,25 @@ def find_circle(p0, p1, p2):
 
     return (a, b, r)
 
+
+# 2点を通り半径rの円の中心を求める
+def find_circle_with_radius(p0, p1, r):
+    # 中点
+    m = (p0[:2] + p1[:2]) / 2
+    d = np.linalg.norm(p0[:2] - p1[:2])
+    if d / 2 > r:
+        raise ValueError("The distance between two points is larger than the diameter.")
+    
+    # 弦の単位ベクトル
+    pd = (p1[:2] - p0[:2]) / d
+    # 垂直二等分線の単位ベクトル
+    n = np.array([-pd[1], pd[0]])
+    # 弦の距離
+    h = np.sqrt(r ** 2 - (d / 2) ** 2)
+    # 中心
+    c0 = m + h * n
+    c1 = m - h * n
+    return (c0, c1)
 
 def find_in_distance(p0, points, distance, min_distance=0.0):
     distances = np.linalg.norm(points - p0, axis=1)
