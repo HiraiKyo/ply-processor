@@ -175,6 +175,7 @@ def main():
             visualising_pcds.append(plane_mesh)
             visualising_pcds.append(cylinder_mesh)
             view_point_cloud(visualising_pcds, "最終結果")
+
         i += 1
 
     # CSV保存
@@ -183,9 +184,6 @@ def main():
     estimated_df.to_csv(f"{dir_name}/estimated.csv")
     vis.destroy_window()
     vis.close()
-
-    # ログ保存
-    logger.export(dir_name)
 
 
 if __name__ == "__main__":

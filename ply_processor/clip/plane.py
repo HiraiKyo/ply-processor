@@ -21,14 +21,16 @@ def clip_plane(pcd_raw, plane_model) -> Result[
     # 平面上の1点を原点、Z軸を平面の法線ベクトルとする座標系に変換
     transformation_matrix = np.eye(4)
     mean = np.mean(points_raw, axis=0)
-    origin = np.array(
-        [
-            mean[0],
-            mean[1],
-            -(plane_model[3] + mean[0] * plane_model[0] + mean[1] * plane_model[1])
-            / plane_model[2],
-        ]
-    )
+    origin = np.array([mean[0], mean[1], 0])
+    if plane_model[2] != 0:
+        origin = np.array(
+            [
+                mean[0],
+                mean[1],
+                -(plane_model[3] + mean[0] * plane_model[0] + mean[1] * plane_model[1])
+                / plane_model[2],
+            ]
+        )
     points = points_raw - origin
 
     if Config.MODE == "dev":
