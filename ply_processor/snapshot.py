@@ -14,7 +14,7 @@ def capture_snapshot(
     vis,
     filename: str,
     pcds: list,
-    cam_pos: NDArray[np.float32],
+    cam_front: NDArray[np.float32],
     cam_lookat: NDArray[np.float32],
     cam_up: NDArray[np.float32],
 ) -> Result[None, str]:
@@ -32,7 +32,7 @@ def capture_snapshot(
     # Zoom, front, lookat, upの設定
     ctr = vis.get_view_control()
     ctr.set_zoom(Config.CAPTURE_ZOOM)
-    ctr.set_front(cam_pos)
+    ctr.set_front(cam_front)
     ctr.set_lookat(cam_lookat)
     ctr.set_up(cam_up)
 
@@ -44,6 +44,8 @@ def capture_snapshot(
     vis.update_renderer()
     time.sleep(1)
     vis.capture_screen_image(filename, do_render=True)
+
+    logger.info(f"Captured snapshot: {filename}")
 
     return Ok(None)
 

@@ -61,7 +61,7 @@ def fit_fixed_axis(points_raw, plane_model):
         coordinate_frame = o3d.geometry.TriangleMesh.create_coordinate_frame(size=10)
         pcd = o3d.geometry.PointCloud()
         pcd.points = o3d.utility.Vector3dVector(points_raw)
-        view_point_cloud([pcd, coordinate_frame], "座標系変換前")
+        view_point_cloud([pcd, coordinate_frame], "円筒軸算出 座標系変換前")
 
     # 平面上の1点を原点、Z軸を平面の法線ベクトルとする座標系に変換
     transformation_matrix = np.eye(4)
@@ -83,7 +83,7 @@ def fit_fixed_axis(points_raw, plane_model):
         coordinate_frame = o3d.geometry.TriangleMesh.create_coordinate_frame(size=10)
         pcd = o3d.geometry.PointCloud()
         pcd.points = o3d.utility.Vector3dVector(points)
-        view_point_cloud([pcd, coordinate_frame, line_set], "平行移動後")
+        view_point_cloud([pcd, coordinate_frame, line_set], "円筒軸算出 平行移動後")
 
     transformation_matrix[:3, :3] = get_rotation_matrix_from_vectors(
         np.array([0, 0, 1]), plane_model[:3]
@@ -98,7 +98,7 @@ def fit_fixed_axis(points_raw, plane_model):
         coordinate_frame = o3d.geometry.TriangleMesh.create_coordinate_frame(size=10)
         pcd = o3d.geometry.PointCloud()
         pcd.points = o3d.utility.Vector3dVector(points[:, :3])
-        view_point_cloud([pcd, coordinate_frame], "座標系変換後")
+        view_point_cloud([pcd, coordinate_frame], "円筒軸算出 座標系変換後")
 
     # 初期値
     c_fit = np.array([0, 0, 0, 1])
@@ -124,7 +124,7 @@ def fit_fixed_axis(points_raw, plane_model):
         pcd = o3d.geometry.PointCloud()
         tmp = points[points_intp]
         pcd.points = o3d.utility.Vector3dVector(tmp[:, :3])
-        view_point_cloud([pcd], "フィッティング用切り出し部分の点群")
+        view_point_cloud([pcd], "円筒軸算出 フィッティング用切り出し部分の点群")
 
     (c_fit, _, _, _) = fit(
         points,
@@ -141,7 +141,7 @@ def fit_fixed_axis(points_raw, plane_model):
         pcd.points = o3d.utility.Vector3dVector(points[:, :3])
         logger.debug(f"Guess before converted: {c_fit[:3]}, {w_fit[:3]}, {r_fit}")
         line_set = create_mesh_line(np.concatenate([c_fit[:3], w_fit[:3] * 100]))
-        view_point_cloud([pcd, line_set, coordinate_frame], "逆変換前、中心軸描画")
+        view_point_cloud([pcd, line_set, coordinate_frame], "円筒軸算出 逆変換前、中心軸描画")
 
     # もとの座標系に戻す
     c_fit = np.dot(transformation_matrix_inv, c_fit.T).T
