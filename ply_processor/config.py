@@ -28,7 +28,7 @@ class Config(ConfigBase):
             # ファイルブラウザを開く
             root = tk.Tk()
             root.withdraw()
-            self.FILEPATH = filedialog.askopenfilename()
+            self.FILEPATH = filedialog.askopenfilename(filetypes=[("PLY files", "*.ply")])
             print(f"FILEPATH: {self.FILEPATH}")
 
         # MODELを上書きするか質問する
