@@ -27,23 +27,24 @@ poetry run task main
 
 ### インタラクティブな設定値
 
-| Param     | Values                               | Default                            | Misc.                                                           |
-| --------- | ------------------------------------ | ---------------------------------- | --------------------------------------------------------------- |
-| FILEPATH  | str                                  | `"data/stained_top/segmented.ply"` | `data`フォルダに`ply`ファイルを入れる                           |
-| LOOP      | Positive Int                         | `1`                                | 基本は OneShot なので`1`, 精度検証で反復する場合は増やす        |
-| MODEL     | `models["phi35"]`, `models["phi40"]` | `phi35`                            | φ35 か φ40 のピンどちらを検証するか                             |
-| MODE      | `dev`, `prod`                        | `dev`                              | `dev`は途中に点群表示して経過が見れる。`prod`は完了まで一気通貫 |
-| LOG_LEVEL | `debug`, `info`, `warn`, `error`     | `debug`                            | ログ表示レベル                                                  |
+| Param     | Values                               | Default                    | Misc.                                                           |
+| --------- | ------------------------------------ | -------------------------- | --------------------------------------------------------------- |
+| FILEPATH  | str                                  | `"data/sample/sample.ply"` | `data`フォルダに`ply`ファイルを入れる                           |
+| LOOP      | Positive Int                         | `1`                        | 基本は OneShot なので`1`, 精度検証で反復する場合は増やす        |
+| MODEL     | `models["phi35"]`, `models["phi40"]` | `phi35`                    | φ35 か φ40 のピンどちらを検証するか                             |
+| MODE      | `dev`, `prod`                        | `prod`                     | `dev`は途中に点群表示して経過が見れる。`prod`は完了まで一気通貫 |
+| LOG_LEVEL | `debug`, `info`, `warn`, `error`     | `debug`                    | ログ表示レベル                                                  |
 
 ### 非インタラクティブ(Config を変更)な設定値
 
-| Param                  | Values         | Default | Misc.                                                                      |
-| ---------------------- | -------------- | ------- | -------------------------------------------------------------------------- |
-| MAX_PLANE_ITERATION    | Positive Int   | 20      |                                                                            |
-| PLANE_POINTS_THRESHOLD | Positive Int   | 2500    | 検知する平面が含む point 数の下限                                          |
-| MAX_ITERATION          | Positive Int   | 1000    | フィッティング実行時の反復回数                                             |
-| INLIER_THRESHOLD       | Positive Float | 1.0     | 平面・曲面方程式が算出された際に、その面からどれだけの距離の点を抽出するか |
-| CAPTURE_ZOOM           | Positive Float | 0.2     | キャプチャ画像生成時の拡大率, 決め打ち                                     |
+| Param                  | Values                | Default      | Misc.                                                                      |
+| ---------------------- | --------------------- | ------------ | -------------------------------------------------------------------------- |
+| MAX_PLANE_ITERATION    | Positive Int          | 20           |                                                                            |
+| PLANE_POINTS_THRESHOLD | Positive Int          | 500          | 検知する平面が含む point 数の下限                                          |
+| MAX_ITERATION          | Positive Int          | 1000         | フィッティング実行時の反復回数                                             |
+| INLIER_THRESHOLD       | Positive Float        | 1.0          | 平面・曲面方程式が算出された際に、その面からどれだけの距離の点を抽出するか |
+| CAPTURE_ZOOM           | Positive Float        | 0.2          | キャプチャ画像生成時の拡大率, 決め打ち                                     |
+| CAM_FRONT              | [float, float, float] | [ -1, -1, 1] | 焦点から見たカメラ方向                                                     |
 
 ## Development
 
@@ -54,6 +55,13 @@ poetry run task main
 ```sh
 poetry run pytest test/test_gui.py
 ```
+
+### シミュレーションモデル作成
+
+座標`(0, 0, 0)`から正方向にモデルを作成する。
+これは、撮影カメラで 45 度角から撮影したくて、焦点(0, 0, 0), カメラ方向(-1, -1, 1)から撮るため。
+
+FreeCAD で作成したモデルを点群化は、`stl2ply.py`を利用。
 
 ## FIXME: 課題
 

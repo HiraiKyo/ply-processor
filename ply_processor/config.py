@@ -11,14 +11,15 @@ models = {
 
 class Config(ConfigBase):
     MAX_PLANE_ITERATION: int = 20
-    PLANE_POINTS_THRESHOLD: int = 2500
+    PLANE_POINTS_THRESHOLD: int = 500
     MAX_ITERATION: int = 1000
     LOOP: int = 1
-    FILEPATH: str = "data/stained_top/segmented.ply"
+    FILEPATH: str = "data/sample/sample.ply"
     INLIER_THRESHOLD: float = 1.0
     MODEL = models["phi35"]
     MODE = "prod"
     CAPTURE_ZOOM = 0.2
+    CAM_FRONT = [-1, -1, 1] # [0, 0, -1]
 
     def interactive_load_config(self):
         # FILEPATHを上書き変更するか質問する
