@@ -31,7 +31,7 @@ def capture_snapshot(
 
     # Zoom, front, lookat, upの設定
     ctr = vis.get_view_control()
-    ctr.set_zoom(0.8)
+    ctr.set_zoom(Config.CAPTURE_ZOOM)
     ctr.set_front(cam_pos)
     ctr.set_lookat(cam_lookat)
     ctr.set_up(cam_up)

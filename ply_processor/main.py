@@ -2,12 +2,12 @@ import os
 import open3d as o3d
 from ply_processor.clip.plane import clip_plane
 from ply_processor.geometry import point_plane_distance
+from ply_processor.gui import open_gui
 from ply_processor.log import create_log_frame
 from ply_processor.utils.log import Logger
 
 from ply_processor.plane.ransac import detect_plane
 from ply_processor.cylinder.fixed_axis import detect_cylinder
-import pandas as pd
 import time
 from ply_processor.snapshot import (
     capture_snapshot,
@@ -181,6 +181,9 @@ def main():
     estimated_df.to_csv(f"{dir_name}/estimated.csv")
     vis.destroy_window()
     vis.close()
+
+    # 結果画面を表示
+    open_gui(dir_name)
 
 
 if __name__ == "__main__":

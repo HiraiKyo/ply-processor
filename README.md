@@ -42,6 +42,16 @@ poetry run task main
 | MAX_ITERATION | Positive Int | 1000 |フィッティング実行時の反復回数 |
 | INLIER_THRESHOLD | Positive Float | 1.0 | 平面・曲面方程式が算出された際に、その面からどれだけの距離の点を抽出するか |
 
+## Development
+
+### Test gui
+
+`tests/test_gui.py`で対象フォルダパスを指定後、
+
+```sh
+poetry run pytest test/test_gui.py
+```
+
 # License
 
 当プロジェクトは GPL ライセンス準拠です。
