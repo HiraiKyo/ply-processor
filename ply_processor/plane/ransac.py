@@ -1,3 +1,4 @@
+from typing import Tuple
 import open3d as o3d
 from result import Ok, Result
 import numpy as np
@@ -13,7 +14,7 @@ logger = Logger()
 def detect_plane(
     pcd: o3d.geometry.PointCloud,
 ) -> Result[
-    list[o3d.geometry.PointCloud, o3d.geometry.PointCloud, NDArray[np.float32]], str
+    Tuple[o3d.geometry.PointCloud, o3d.geometry.PointCloud, NDArray[np.float32]], str
 ]:
     """_summary_
 
@@ -49,7 +50,7 @@ def detect_plane(
         )
 
     # 可視化
-    return Ok([inlier_cloud, outlier_cloud, plane_model])
+    return Ok((inlier_cloud, outlier_cloud, plane_model))
 
 
 class Plane:

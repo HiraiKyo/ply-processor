@@ -1,3 +1,4 @@
+from typing import Tuple
 import numpy as np
 import open3d as o3d
 from result import Result, Ok
@@ -10,10 +11,7 @@ logger = Logger()
 
 
 def clip_plane(pcd_raw, plane_model) -> Result[
-    list[
-        o3d.geometry.PointCloud,
-        o3d.geometry.PointCloud,
-    ],
+    Tuple[o3d.geometry.PointCloud, o3d.geometry.PointCloud],
     str,
 ]:
     points_raw = np.asarray(pcd_raw.points)
@@ -69,4 +67,4 @@ def clip_plane(pcd_raw, plane_model) -> Result[
     outlier_cloud = pcd_raw.select_by_index(points_intp, invert=True)
     outlier_cloud.paint_uniform_color([0, 0, 0])
 
-    return Ok([inlier_cloud, outlier_cloud])
+    return Ok((inlier_cloud, outlier_cloud))

@@ -7,6 +7,7 @@ from ply_processor.utils.log import Logger
 
 from ply_processor.plane.ransac import detect_plane
 from ply_processor.cylinder.fixed_axis import detect_cylinder
+import pandas as pd
 import time
 from ply_processor.snapshot import (
     capture_snapshot,
@@ -95,10 +96,6 @@ def main():
             clip2_inlier_cloud, plane_model=plane_model
         ).ok_value
         visualising_pcds.append(cylinder_inlier_cloud)
-        # # 円筒フィッティング
-        # fit_cylinder_inlier_cloud, fit_cylinder_outlier_cloud, cylinder_model = (
-        #     fit_cylinder(cylinder_inlier_cloud, axis=cylinder_model[:3]).ok_value
-        # )
 
         # 基準点からの円筒軸, 円半径位置算出
         d = [

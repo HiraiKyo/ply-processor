@@ -11,6 +11,7 @@ poetry config virtualenvs.in-project true
 ## Install Packages
 
 ```sh
+sudo apt install python3.*-tk tk-dev
 poetry install
 ```
 

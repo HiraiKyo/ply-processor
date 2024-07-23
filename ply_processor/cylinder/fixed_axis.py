@@ -1,11 +1,11 @@
 import random
+from typing import Tuple
 import open3d as o3d
 import numpy as np
 from numpy.typing import NDArray
 from result import Ok, Result
 from ply_processor.config import Config
 from ply_processor.geometry import get_rotation_matrix_from_vectors, point_line_distance
-from scipy.optimize import minimize
 
 from ply_processor.snapshot import create_mesh_line, view_point_cloud
 from ply_processor.utils.log import Logger
@@ -17,7 +17,7 @@ def detect_cylinder(
     pcd: o3d.geometry.PointCloud,
     plane_model: NDArray[np.float32],
 ) -> Result[
-    list[
+    Tuple[
         o3d.geometry.PointCloud,
         o3d.geometry.PointCloud,
         NDArray[np.float32],
@@ -52,7 +52,7 @@ def detect_cylinder(
     outliers = np.where(distances >= Config.INLIER_THRESHOLD)[0]
     outliers_cloud = pcd.select_by_index(outliers)
 
-    return Ok([inliers_cloud, outliers_cloud, cylinder_model])
+    return Ok((inliers_cloud, outliers_cloud, cylinder_model))
 
 
 def fit_fixed_axis(points_raw, plane_model):
