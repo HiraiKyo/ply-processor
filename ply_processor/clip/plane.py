@@ -1,16 +1,17 @@
+from typing import Tuple
 import numpy as np
 import open3d as o3d
 from result import Result, Ok
 from ply_processor.config import Config
 from ply_processor.geometry import get_rotation_matrix_from_vectors
 from ply_processor.snapshot import view_point_cloud
+from ply_processor.utils.log import Logger
+
+logger = Logger()
 
 
 def clip_plane(pcd_raw, plane_model) -> Result[
-    list[
-        o3d.geometry.PointCloud,
-        o3d.geometry.PointCloud,
-    ],
+    Tuple[o3d.geometry.PointCloud, o3d.geometry.PointCloud],
     str,
 ]:
     points_raw = np.asarray(pcd_raw.points)
@@ -18,14 +19,16 @@ def clip_plane(pcd_raw, plane_model) -> Result[
     # 平面上の1点を原点、Z軸を平面の法線ベクトルとする座標系に変換
     transformation_matrix = np.eye(4)
     mean = np.mean(points_raw, axis=0)
-    origin = np.array(
-        [
-            mean[0],
-            mean[1],
-            -(plane_model[3] + mean[0] * plane_model[0] + mean[1] * plane_model[1])
-            / plane_model[2],
-        ]
-    )
+    origin = np.array([mean[0], mean[1], 0])
+    if plane_model[2] != 0:
+        origin = np.array(
+            [
+                mean[0],
+                mean[1],
+                -(plane_model[3] + mean[0] * plane_model[0] + mean[1] * plane_model[1])
+                / plane_model[2],
+            ]
+        )
     points = points_raw - origin
 
     if Config.MODE == "dev":
@@ -37,8 +40,7 @@ def clip_plane(pcd_raw, plane_model) -> Result[
     transformation_matrix[:3, :3] = get_rotation_matrix_from_vectors(
         np.array([0, 0, 1]), plane_model[:3]
     )
-    transformation_matrix_inv = np.linalg.inv(transformation_matrix)
-    print(f"Transformation Matrix: {transformation_matrix}")
+    logger.debug(f"Transformation Matrix: {transformation_matrix}")
 
     # アフィン変換のために4x1に変換
     points = np.concatenate([points, np.ones((points.shape[0], 1))], axis=1)
@@ -58,10 +60,11 @@ def clip_plane(pcd_raw, plane_model) -> Result[
         points_intp = points_intp_inv
 
     if len(points_intp) == 0:
+        Logger.error("No points has detected.")
         raise ValueError("No points has detected unexpectedly.")
 
     inlier_cloud = pcd_raw.select_by_index(points_intp)
     outlier_cloud = pcd_raw.select_by_index(points_intp, invert=True)
     outlier_cloud.paint_uniform_color([0, 0, 0])
 
-    return Ok([inlier_cloud, outlier_cloud])
+    return Ok((inlier_cloud, outlier_cloud))

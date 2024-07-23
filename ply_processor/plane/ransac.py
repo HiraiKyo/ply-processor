@@ -1,3 +1,4 @@
+from typing import Tuple
 import open3d as o3d
 from result import Ok, Result
 import numpy as np
@@ -5,12 +6,15 @@ from numpy.typing import NDArray
 from ply_processor.config import Config
 import random
 from ply_processor.snapshot import view_point_cloud
+from ply_processor.utils.log import Logger
+
+logger = Logger()
 
 
 def detect_plane(
     pcd: o3d.geometry.PointCloud,
 ) -> Result[
-    list[o3d.geometry.PointCloud, o3d.geometry.PointCloud, NDArray[np.float32]], str
+    Tuple[o3d.geometry.PointCloud, o3d.geometry.PointCloud, NDArray[np.float32]], str
 ]:
     """_summary_
 
@@ -28,8 +32,8 @@ def detect_plane(
     )
 
     [a, b, c, d] = plane_model
-    print(
-        f"Plane equation: {a:.2f}x + {b:.2f}y + {c:.2f}z + {d:.2f} = 0, Points: {len(inliers)}"
+    logger.debug(
+        f"Plane equation: {a:.2f}x + {b:.2f}y + {c:.2f}z + {d:.2f} = 0, Points: {len(inliers)}",
     )
 
     # インライアの点を抽出して色を付ける
@@ -46,7 +50,7 @@ def detect_plane(
         )
 
     # 可視化
-    return Ok([inlier_cloud, outlier_cloud, plane_model])
+    return Ok((inlier_cloud, outlier_cloud, plane_model))
 
 
 class Plane:
