@@ -4,6 +4,9 @@ from result import Result, Ok
 from ply_processor.config import Config
 from ply_processor.geometry import get_rotation_matrix_from_vectors
 from ply_processor.snapshot import view_point_cloud
+from ply_processor.utils.log import Logger
+
+logger = Logger()
 
 
 def clip_plane(pcd_raw, plane_model) -> Result[
@@ -37,8 +40,7 @@ def clip_plane(pcd_raw, plane_model) -> Result[
     transformation_matrix[:3, :3] = get_rotation_matrix_from_vectors(
         np.array([0, 0, 1]), plane_model[:3]
     )
-    transformation_matrix_inv = np.linalg.inv(transformation_matrix)
-    print(f"Transformation Matrix: {transformation_matrix}")
+    logger.debug(f"Transformation Matrix: {transformation_matrix}")
 
     # アフィン変換のために4x1に変換
     points = np.concatenate([points, np.ones((points.shape[0], 1))], axis=1)
@@ -58,6 +60,7 @@ def clip_plane(pcd_raw, plane_model) -> Result[
         points_intp = points_intp_inv
 
     if len(points_intp) == 0:
+        Logger.error("No points has detected.")
         raise ValueError("No points has detected unexpectedly.")
 
     inlier_cloud = pcd_raw.select_by_index(points_intp)

@@ -3,14 +3,20 @@ from result import Result, Ok
 import time
 import numpy as np
 from numpy.typing import NDArray
+from ply_processor.config import Config
 from ply_processor.geometry import get_rotation_matrix_from_vectors
+from ply_processor.utils.log import Logger
+
+logger = Logger()
 
 
 def capture_snapshot(
     vis,
     filename: str,
-    lookat: NDArray[np.float32],
     pcds: list,
+    cam_pos: NDArray[np.float32],
+    cam_lookat: NDArray[np.float32],
+    cam_up: NDArray[np.float32],
 ) -> Result[None, str]:
     vis.clear_geometries()
 
@@ -21,14 +27,14 @@ def capture_snapshot(
     opt.show_coordinate_frame = True
     opt.mesh_show_back_face = True
     opt.mesh_show_wireframe = True  # メッシュのワイヤーフレームを表示
-    opt.background_color = np.asarray([0.8, 0.8, 0.8])  # 背景色を設定
+    opt.background_color = np.asarray([1, 1, 1])  # 背景色を設定
 
     # Zoom, front, lookat, upの設定
     ctr = vis.get_view_control()
     ctr.set_zoom(0.8)
-    ctr.set_front([0.0, 0.0, -50.0])
-    ctr.set_lookat([lookat[0], lookat[1], lookat[2]])
-    ctr.set_up([1.0, 0.0, 0.0])
+    ctr.set_front(cam_pos)
+    ctr.set_lookat(cam_lookat)
+    ctr.set_up(cam_up)
 
     for pcd in pcds:
         vis.update_geometry(pcd)
@@ -43,16 +49,18 @@ def capture_snapshot(
 
 
 def view_point_cloud(pcds: list, window_name: str = "Open3D"):
-    o3d.visualization.draw_geometries(
-        pcds,
-        window_name,
-        width=800,
-        height=600,
-        left=50,
-        top=50,
-        point_show_normal=False,
-        mesh_show_wireframe=True,
-    )
+    if Config.MODE == "dev":
+        logger.debug(f"Visualizing Point Cloud: {window_name}")
+        o3d.visualization.draw_geometries(
+            pcds,
+            window_name,
+            width=800,
+            height=600,
+            left=50,
+            top=50,
+            point_show_normal=False,
+            mesh_show_wireframe=True,
+        )
     return Ok(None)
 
 

@@ -5,6 +5,9 @@ from numpy.typing import NDArray
 from ply_processor.config import Config
 import random
 from ply_processor.snapshot import view_point_cloud
+from ply_processor.utils.log import Logger
+
+logger = Logger()
 
 
 def detect_plane(
@@ -28,8 +31,8 @@ def detect_plane(
     )
 
     [a, b, c, d] = plane_model
-    print(
-        f"Plane equation: {a:.2f}x + {b:.2f}y + {c:.2f}z + {d:.2f} = 0, Points: {len(inliers)}"
+    logger.debug(
+        f"Plane equation: {a:.2f}x + {b:.2f}y + {c:.2f}z + {d:.2f} = 0, Points: {len(inliers)}",
     )
 
     # インライアの点を抽出して色を付ける

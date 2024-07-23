@@ -8,6 +8,9 @@ from ply_processor.geometry import get_rotation_matrix_from_vectors, point_line_
 from scipy.optimize import minimize
 
 from ply_processor.snapshot import create_mesh_line, view_point_cloud
+from ply_processor.utils.log import Logger
+
+logger = Logger()
 
 
 def detect_cylinder(
@@ -32,10 +35,10 @@ def detect_cylinder(
     x0, y0, z0 = C_fit
     a, b, c = w_fit
     r = r_fit
-    print(
+    logger.debug(
         f"Cylinder axis equation: ({x0:.2f}, {y0:.2f}, {z0:.2f}) + t({a:.2f}, {b:.2f}, {c:.2f})"
     )
-    print(f"Cylinder radius: {r}")
+    logger.debug(f"Cylinder radius: {r}")
 
     # PCDに色付け
     # 推定した円筒モデル近傍の点を抽出
@@ -45,7 +48,7 @@ def detect_cylinder(
     inliers_cloud = pcd.select_by_index(inliers)
     inliers_cloud.paint_uniform_color([0, 1.0, 0])
 
-    print(f"Points in cylinder surface: {len(inliers_cloud.points)}")
+    logger.debug(f"Points in cylinder surface: {len(inliers_cloud.points)}")
     outliers = np.where(distances >= Config.INLIER_THRESHOLD)[0]
     outliers_cloud = pcd.select_by_index(outliers)
 
@@ -86,7 +89,6 @@ def fit_fixed_axis(points_raw, plane_model):
         np.array([0, 0, 1]), plane_model[:3]
     )
     transformation_matrix_inv = np.linalg.inv(transformation_matrix)
-    print(f"Transformation Matrix: {transformation_matrix}")
     # アフィン変換のために4x1に変換
     points = np.concatenate([points, np.ones((points.shape[0], 1))], axis=1)
     points = np.dot(transformation_matrix, points.T).T
@@ -124,14 +126,20 @@ def fit_fixed_axis(points_raw, plane_model):
         pcd.points = o3d.utility.Vector3dVector(tmp[:, :3])
         view_point_cloud([pcd], "フィッティング用切り出し部分の点群")
 
-    (c_fit, _, _, _)= fit(points, points_intp, np.asarray([0.0, 0.0, 1.0, 0.0]), thresh=0.1, maxIteration=Config.MAX_ITERATION)
-    
+    (c_fit, _, _, _) = fit(
+        points,
+        points_intp,
+        np.asarray([0.0, 0.0, 1.0, 0.0]),
+        thresh=0.1,
+        maxIteration=Config.MAX_ITERATION,
+    )
+
     if Config.MODE == "dev":
         # 逆変換前に中心軸描画
         coordinate_frame = o3d.geometry.TriangleMesh.create_coordinate_frame(size=10)
         pcd = o3d.geometry.PointCloud()
         pcd.points = o3d.utility.Vector3dVector(points[:, :3])
-        print(f"Guess before converted: {c_fit[:3]}, {w_fit[:3]}, {r_fit}")
+        logger.debug(f"Guess before converted: {c_fit[:3]}, {w_fit[:3]}, {r_fit}")
         line_set = create_mesh_line(np.concatenate([c_fit[:3], w_fit[:3] * 100]))
         view_point_cloud([pcd, line_set, coordinate_frame], "逆変換前、中心軸描画")
 
@@ -146,7 +154,7 @@ def fit_fixed_axis(points_raw, plane_model):
 
 def fit(points_raw, pointers, plane_model, thresh=0.2, maxIteration=1000):
     points = points_raw
-    
+
     # 軸は平面の法線ベクトル、半径は設定値で固定する
     c_fit = np.array([0.0, 0.0, 0.0, 1.0])
     w_fit = plane_model[:3]
@@ -166,7 +174,7 @@ def fit(points_raw, pointers, plane_model, thresh=0.2, maxIteration=1000):
         c = np.concatenate([cs[random.randint(0, 1)], np.asarray([0.0, 1.0])])
         w = w_fit
         r = r_fit
-        
+
         # 各点の中心軸との距離を算出し、閾値以下の点を抽出する
         distances = np.abs(point_line_distance(points[:, :3], c[:3], w) - r)
         pt_id_inliers = np.where(distances <= thresh)[0]
@@ -211,17 +219,18 @@ def find_circle_with_radius(p0, p1, r):
     d = np.linalg.norm(p0[:2] - p1[:2])
     if d / 2 > r:
         raise ValueError("The distance between two points is larger than the diameter.")
-    
+
     # 弦の単位ベクトル
     pd = (p1[:2] - p0[:2]) / d
     # 垂直二等分線の単位ベクトル
     n = np.array([-pd[1], pd[0]])
     # 弦の距離
-    h = np.sqrt(r ** 2 - (d / 2) ** 2)
+    h = np.sqrt(r**2 - (d / 2) ** 2)
     # 中心
     c0 = m + h * n
     c1 = m - h * n
     return (c0, c1)
+
 
 def find_in_distance(p0, points, distance, min_distance=0.0):
     distances = np.linalg.norm(points - p0, axis=1)

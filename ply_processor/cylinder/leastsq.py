@@ -7,6 +7,10 @@ from scipy.optimize import leastsq
 from ply_processor.geometry import normalize, point_line_distance
 from cylinder_fitting import fit
 
+from ply_processor.utils.log import Logger
+
+logger = Logger()
+
 
 def detect_cylinder(
     pcd: o3d.geometry.PointCloud,
@@ -50,10 +54,10 @@ def detect_cylinder(
     x0, y0, z0 = C_fit
     a, b, c = w_fit
     r = r_fit
-    print(
+    logger.debug(
         f"Cylinder axis equation: ({x0:.2f}, {y0:.2f}, {z0:.2f}) + t({a:.2f}, {b:.2f}, {c:.2f})"
     )
-    print(f"Cylinder radius: {r}")
+    logger.debug(f"Cylinder radius: {r}")
 
     # PCDに色付け
     # 推定した円筒モデル近傍の点を抽出
