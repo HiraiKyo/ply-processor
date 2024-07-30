@@ -32,6 +32,7 @@ class Config(ConfigBase):
             self.FILEPATH = filedialog.askopenfilename()
             print(f"FILEPATH: {self.FILEPATH}")
 
+        # ノイズ対策、初期平面を何枚スキップするか選択
         print(f"Do you want to skip initial planes? (Default: {self.SKIP_INITIAL_PLANES}) [y/N]: ", end="")
         if input().lower() == "y":
             print("Enter the number of planes to skip: ", end="")
@@ -40,6 +41,17 @@ class Config(ConfigBase):
                 self.SKIP_INITIAL_PLANES = int(skip_planes)
             else:
                 print("Invalid number. Using default value.")
+
+        # 検出面の点数下限値を変更するか質問する
+        print(f"Do you want to change the plane points threshold? (Default: {self.PLANE_POINTS_THRESHOLD}) [y/N]: ", end="")
+        if input().lower() == "y":
+            print("Enter the plane points threshold: ", end="")
+            threshold = input()
+            if threshold.isnumeric() and int(threshold) > 0:
+                self.PLANE_POINTS_THRESHOLD = int(threshold)
+            else:
+                print("Invalid threshold. Using default value.")
+
         # MODELを上書きするか質問する
         print(f"Do you want to change the model? (Default: {self.MODEL}) [y/N]: ", end="")
         if input().lower() == "y":
