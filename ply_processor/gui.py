@@ -4,6 +4,8 @@ from PyQt6.QtWidgets import QApplication, QSizePolicy, QSpacerItem, QWidget, QPu
 from PyQt6.QtGui import QPixmap
 import pandas as pd
 
+from ply_processor.utils.log import Logger
+
 grid_row = 4
 
 def open_gui(dir_name: str):
@@ -30,9 +32,10 @@ def open_gui(dir_name: str):
     calc_time = df['calc_time']
     distances = df.filter(like='distance_plane').values[0]
 
-    print(image_paths)
     # ファイルを読み込む
     # GUIに表示
+    logger = Logger()
+    logger.debug(f"radius: {radius}, calc_time: {calc_time}, distances: {distances}, image_paths: {image_paths}")
     qAp = QApplication(sys.argv)
     viewer = Viewer(radius, calc_time, distances, image_paths)
     viewer.show()

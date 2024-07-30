@@ -193,6 +193,7 @@ def main():
         vis.close()
 
         # 結果画面を表示
+        logger.info("Opening Result Viewer...")
         open_gui(dir_name)
     except Exception as e:
         logger.error(e)

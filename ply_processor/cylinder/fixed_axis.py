@@ -217,6 +217,9 @@ def find_circle_with_radius(p0, p1, r):
     # 中点
     m = (p0[:2] + p1[:2]) / 2
     d = np.linalg.norm(p0[:2] - p1[:2])
+    if d < 1e-6:
+        raise ValueError("Two points are too close to each other.")
+
     if d / 2 > r:
         raise ValueError("The distance between two points is larger than the diameter.")
 
