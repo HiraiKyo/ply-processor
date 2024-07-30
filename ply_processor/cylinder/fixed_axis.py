@@ -161,29 +161,36 @@ def fit(points_raw, pointers, plane_model, thresh=0.2, maxIteration=1000):
     r_fit = Config.MODEL["r"]
 
     best_inliers = []
-
+    
+    failed_iterations = 0
     for i in range(maxIteration):
-        # サンプリング
-        # 任意2点を選び、2点を通る半径rの円の方程式を求める
-        indices = np.random.choice(pointers, 1, replace=False)
-        p0 = points[indices[0]]
-        # 残りの任意点は、直径以内の距離から選択する
-        p1 = find_in_distance(p0, points, Config.MODEL["r"] * 2)
-        cs = find_circle_with_radius(p0, p1, Config.MODEL["r"])
+        try:
+            # サンプリング
+            # 任意2点を選び、2点を通る半径rの円の方程式を求める
+            indices = np.random.choice(pointers, 1, replace=False)
+            p0 = points[indices[0]]
+            # 残りの任意点は、直径以内の距離から選択する
+            p1 = find_in_distance(p0, points, Config.MODEL["r"] * 2)
+            cs = find_circle_with_radius(p0, p1, Config.MODEL["r"])
 
-        c = np.concatenate([cs[random.randint(0, 1)], np.asarray([0.0, 1.0])])
-        w = w_fit
-        r = r_fit
+            c = np.concatenate([cs[random.randint(0, 1)], np.asarray([0.0, 1.0])])
+            w = w_fit
+            r = r_fit
 
-        # 各点の中心軸との距離を算出し、閾値以下の点を抽出する
-        distances = np.abs(point_line_distance(points[:, :3], c[:3], w) - r)
-        pt_id_inliers = np.where(distances <= thresh)[0]
+            # 各点の中心軸との距離を算出し、閾値以下の点を抽出する
+            distances = np.abs(point_line_distance(points[:, :3], c[:3], w) - r)
+            pt_id_inliers = np.where(distances <= thresh)[0]
 
-        # 点がより多く含まれる円筒面を見つける
-        if len(pt_id_inliers) > len(best_inliers):
-            best_inliers = pt_id_inliers
-            c_fit = c
+            # 点がより多く含まれる円筒面を見つける
+            if len(pt_id_inliers) > len(best_inliers):
+                best_inliers = pt_id_inliers
+                c_fit = c
+        except Exception as e:
+            logger.warn("Iteration has been failed to fit the cylinder.")
+            failed_iterations += 1
+            pass
 
+    logger.debug(f"Failed iterations for fit cylinder: {failed_iterations}")
     return c_fit, w_fit, r_fit, best_inliers
 
 

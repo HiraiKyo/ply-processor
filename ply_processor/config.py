@@ -8,6 +8,20 @@ models = {
     "phi35": {"h_bottom": 10.0, "h_top": 30.0, "r": 35.0 / 2},
 }
 
+cam_presets = {
+    "default": [-1, -1, 1],
+    "front": [0, 0, -1],
+    "top": [0, -1, 0],
+    "right": [-1, 0, 0],
+    "left": [1, 0, 0],
+    "back": [0, 0, 1],
+    "bottom": [0, 1, 0],
+    "l45": [1, -1, 1],
+    "r45": [-1, -1, 1],
+    "l135": [1, -1, -1],
+    "r135": [-1, -1, -1],
+}
+
 
 class Config(ConfigBase):
     SKIP_INITIAL_PLANES: int = 0
@@ -20,7 +34,7 @@ class Config(ConfigBase):
     MODEL = models["phi35"]
     MODE = "prod"
     CAPTURE_ZOOM = 0.2
-    CAM_FRONT = [-1, -1, 1] # [0, 0, -1]
+    CAM_FRONT = cam_presets["default"]
 
     def interactive_load_config(self):
         # FILEPATHを上書き変更するか質問する
@@ -57,13 +71,26 @@ class Config(ConfigBase):
         if input().lower() == "y":
             print("Available models:")
             for key, value in models.items():
-                print(f"- {key}")
+                print(f"- {key}: {value}")
             print("Enter the model name: ", end="")
             model_name = input()
             if model_name in models:
                 self.MODEL = models[model_name]
             else:
                 print("Invalid model name. Using default model.")
+
+        # カメラ位置をプリセットから選択するか質問する
+        print(f"Do you want to change the camera position? (Default: {self.CAM_FRONT}) [y/N]: ", end="")
+        if input().lower() == "y":
+            print("Available camera presets:")
+            for key, value in cam_presets.items():
+                print(f"- {key}: {value}")
+            print("Enter the camera position name: ", end="")
+            cam_name = input()
+            if cam_name in cam_presets:
+                self.CAM_FRONT = cam_presets[cam_name]
+            else:
+                print("Invalid camera position name. Using default camera position.")
 
         # MODEを上書きするか質問する
         print("Do you want to change the mode? [y/N]: ", end="")
@@ -104,5 +131,4 @@ class Config(ConfigBase):
             else:
                 print("Invalid loop count. Using one shot mode.")
 
-        
         return self
