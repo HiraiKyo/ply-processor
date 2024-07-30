@@ -10,6 +10,7 @@ models = {
 
 
 class Config(ConfigBase):
+    SKIP_INITIAL_PLANES: int = 0
     MAX_PLANE_ITERATION: int = 20
     PLANE_POINTS_THRESHOLD: int = 500
     MAX_ITERATION: int = 1000
@@ -23,7 +24,7 @@ class Config(ConfigBase):
 
     def interactive_load_config(self):
         # FILEPATHを上書き変更するか質問する
-        print("Do you want to change the file path? [y/N]: ", end="")
+        print(f'Do you want to change the file path? (Default: {self.FILEPATH}) [y/N]: ', end="")
         if input().lower() == "y":
             # ファイルブラウザを開く
             root = tk.Tk()
@@ -31,8 +32,16 @@ class Config(ConfigBase):
             self.FILEPATH = filedialog.askopenfilename()
             print(f"FILEPATH: {self.FILEPATH}")
 
+        print(f"Do you want to skip initial planes? (Default: {self.SKIP_INITIAL_PLANES}) [y/N]: ", end="")
+        if input().lower() == "y":
+            print("Enter the number of planes to skip: ", end="")
+            skip_planes = input()
+            if skip_planes.isnumeric() and int(skip_planes) >= 0:
+                self.SKIP_INITIAL_PLANES = int(skip_planes)
+            else:
+                print("Invalid number. Using default value.")
         # MODELを上書きするか質問する
-        print("Do you want to change the model? [y/N]: ", end="")
+        print(f"Do you want to change the model? (Default: {self.MODEL}) [y/N]: ", end="")
         if input().lower() == "y":
             print("Available models:")
             for key, value in models.items():
@@ -83,4 +92,5 @@ class Config(ConfigBase):
             else:
                 print("Invalid loop count. Using one shot mode.")
 
+        
         return self

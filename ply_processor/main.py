@@ -45,10 +45,19 @@ def main():
             start = time.perf_counter()
 
             # 点群処理
+            # ノイズ面スキップ
+            skipped_plane_outlier_cloud = pcd
+            for j in range(Config.SKIP_INITIAL_PLANES):
+                logger.debug(f"Skipping initial plane {j}...")
+                skipped_plane_inlier_cloud, skipped_plane_outlier_cloud, plane_model = detect_plane(
+                    skipped_plane_outlier_cloud
+                ).ok_value
+                visualising_pcds.append(skipped_plane_inlier_cloud)
+
             # 板底面検出
             logger.debug("Detecting base plane...")
             plane_inlier_cloud, plane_outlier_cloud, plane_model = detect_plane(
-                pcd
+                skipped_plane_outlier_cloud
             ).ok_value
 
             # 板側面検出

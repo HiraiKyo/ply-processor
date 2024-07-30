@@ -71,8 +71,13 @@ class Plane:
             vecB = pt_samples[2, :] - pt_samples[0, :]
 
             vecC = np.cross(vecA, vecB)
+            normC = np.linalg.norm(vecC)
 
-            vecC = vecC / np.linalg.norm(vecC)
+            # ランダムサンプリングした3点がほぼ同一直線上にある場合はスキップ
+            if normC < 1e-6:
+                continue
+
+            vecC = vecC / normC
             k = -np.sum(np.multiply(vecC, pt_samples[1, :]))
             plane_eq = [vecC[0], vecC[1], vecC[2], k]
 
