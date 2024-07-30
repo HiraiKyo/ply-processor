@@ -196,6 +196,7 @@ def main():
         logger.info("Opening Result Viewer...")
         open_gui(dir_name)
     except Exception as e:
+        print(e)
         logger.error(e)
     finally:
         # ログ保存

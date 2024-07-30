@@ -1,5 +1,6 @@
 import os
 import sys
+from typing import Dict, List, Sequence
 from PyQt6.QtWidgets import QApplication, QSizePolicy, QSpacerItem, QWidget, QPushButton, QVBoxLayout, QHBoxLayout, QLabel, QGridLayout
 from PyQt6.QtGui import QPixmap
 import pandas as pd
@@ -28,8 +29,8 @@ def open_gui(dir_name: str):
         "planes": [f'{image_dir_name}/{x}' for x in image_planes]
     }
     df = pd.read_csv(f'{dir_name}/estimated.csv')
-    radius = df['radius']
-    calc_time = df['calc_time']
+    radius = df['radius'][0]
+    calc_time = df['calc_time'][0]
     distances = df.filter(like='distance_plane').values[0]
 
     # ファイルを読み込む
@@ -48,7 +49,7 @@ window_size = (100, 100, 1440, 900)
 
 # View Root Widget
 class Viewer(QWidget):
-    def __init__(self, radius, calc_time, distances, image_paths):
+    def __init__(self, radius: float, calc_time: float, distances: List[float], image_paths: Dict[str, Sequence[str]]):
         super().__init__()
         self.radius = radius
         self.calc_time = calc_time
@@ -113,7 +114,7 @@ class ImageWithLabel(QWidget):
         pass
 
 class ParamTable(QWidget):
-    def __init__(self, radius, calc_time, distances):
+    def __init__(self, radius: float, calc_time: float, distances: List[float]):
         super().__init__()
 
         self.initUI(radius, calc_time, distances)
@@ -125,9 +126,8 @@ class ParamTable(QWidget):
         v.addLayout(table)
         table.addWidget(QLabel('Radius'), 0, 0)
         table.addWidget(QLabel('Calc Time'), 0, 1)
-        for i, (r, t, d) in enumerate(zip(radius, calc_time, distances)):
-            table.addWidget(QLabel(f'{r:.2f}mm'), i + 1, 0)
-            table.addWidget(QLabel(f'{t:.2f}s'), i + 1, 1)
+        table.addWidget(QLabel(f'{radius:.2f}mm'), 1, 0)
+        table.addWidget(QLabel(f'{calc_time:.2f}s'), 1, 1)
 
         # レイアウト調整用スペーサー
         spacer = Spacer()
